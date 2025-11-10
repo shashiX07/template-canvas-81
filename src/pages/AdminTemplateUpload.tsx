@@ -13,13 +13,25 @@ import JSZip from "jszip";
 
 const AdminTemplateUpload = () => {
   const navigate = useNavigate();
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
-  const [tags, setTags] = useState("");
+  const [formData, setFormData] = useState<{
+    title: string;
+    description: string;
+    category: string;
+    tags: string;
+    isPublic: boolean;
+    isPremium: boolean;
+    cssFiles?: Record<string, string>;
+    jsFiles?: Record<string, string>;
+    assets?: Record<string, string>;
+  }>({
+    title: "",
+    description: "",
+    category: "",
+    tags: "",
+    isPublic: true,
+    isPremium: false,
+  });
   const [thumbnail, setThumbnail] = useState("");
-  const [isPublic, setIsPublic] = useState(true);
-  const [isPremium, setIsPremium] = useState(false);
   const [htmlContent, setHtmlContent] = useState("");
   const [zipFile, setZipFile] = useState<File | null>(null);
 
@@ -55,7 +67,69 @@ const AdminTemplateUpload = () => {
 
       const html = await indexFile.async("string");
       setHtmlContent(html);
-      toast.success("ZIP file processed successfully");
+      
+      // Extract CSS files
+      const cssFiles: Record<string, string> = {};
+      const cssFolder = contents.folder("css");
+      if (cssFolder) {
+        const cssPromises: Promise<void>[] = [];
+        cssFolder.forEach((relativePath, file) => {
+          if (!file.dir && relativePath.endsWith('.css')) {
+            cssPromises.push(
+              file.async("string").then(content => {
+                cssFiles[relativePath] = content;
+              })
+            );
+          }
+        });
+        await Promise.all(cssPromises);
+      }
+      
+      // Extract JS files
+      const jsFiles: Record<string, string> = {};
+      const jsFolder = contents.folder("js");
+      if (jsFolder) {
+        const jsPromises: Promise<void>[] = [];
+        jsFolder.forEach((relativePath, file) => {
+          if (!file.dir && relativePath.endsWith('.js')) {
+            jsPromises.push(
+              file.async("string").then(content => {
+                jsFiles[relativePath] = content;
+              })
+            );
+          }
+        });
+        await Promise.all(jsPromises);
+      }
+      
+      // Extract assets
+      const assets: Record<string, string> = {};
+      const assetsFolder = contents.folder("assets");
+      if (assetsFolder) {
+        const assetPromises: Promise<void>[] = [];
+        assetsFolder.forEach((relativePath, file) => {
+          if (!file.dir) {
+            assetPromises.push(
+              file.async("base64").then(content => {
+                const ext = relativePath.split('.').pop()?.toLowerCase();
+                let mimeType = 'application/octet-stream';
+                if (ext === 'png') mimeType = 'image/png';
+                else if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg';
+                else if (ext === 'gif') mimeType = 'image/gif';
+                else if (ext === 'svg') mimeType = 'image/svg+xml';
+                else if (ext === 'webp') mimeType = 'image/webp';
+                else if (ext === 'mp4') mimeType = 'video/mp4';
+                else if (ext === 'webm') mimeType = 'video/webm';
+                assets[relativePath] = `data:${mimeType};base64,${content}`;
+              })
+            );
+          }
+        });
+        await Promise.all(assetPromises);
+      }
+      
+      setFormData(prev => ({ ...prev, cssFiles, jsFiles, assets }));
+      toast.success("ZIP file processed successfully with all assets");
     } catch (error) {
       toast.error("Error processing ZIP file");
       console.error(error);
@@ -75,7 +149,7 @@ const AdminTemplateUpload = () => {
   };
 
   const handlePublish = () => {
-    if (!title || !description || !category || !htmlContent || !thumbnail) {
+    if (!formData.title || !formData.description || !formData.category || !htmlContent || !thumbnail) {
       toast.error("Please fill all required fields and upload files");
       return;
     }
@@ -85,14 +159,17 @@ const AdminTemplateUpload = () => {
 
     const template: Template = {
       id: `template-${Date.now()}`,
-      title,
-      description,
+      title: formData.title,
+      description: formData.description,
       thumbnail,
-      category,
-      tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+      category: formData.category,
+      tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
       htmlContent,
-      isPublic,
-      isPremium,
+      cssFiles: formData.cssFiles,
+      jsFiles: formData.jsFiles,
+      assets: formData.assets,
+      isPublic: formData.isPublic,
+      isPremium: formData.isPremium,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       createdBy: user.name,
@@ -185,8 +262,8 @@ const AdminTemplateUpload = () => {
               <div>
                 <Label>Title *</Label>
                 <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  value={formData.title}
+                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   placeholder="Birthday Celebration"
                 />
               </div>
@@ -194,8 +271,8 @@ const AdminTemplateUpload = () => {
               <div>
                 <Label>Description *</Label>
                 <Textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="A beautiful birthday invitation template..."
                   rows={3}
                 />
@@ -204,8 +281,8 @@ const AdminTemplateUpload = () => {
               <div>
                 <Label>Category *</Label>
                 <Input
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  value={formData.category}
+                  onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
                   placeholder="Birthday, Wedding, Condolence, etc."
                 />
               </div>
@@ -213,8 +290,8 @@ const AdminTemplateUpload = () => {
               <div>
                 <Label>Tags (comma-separated)</Label>
                 <Input
-                  value={tags}
-                  onChange={(e) => setTags(e.target.value)}
+                  value={formData.tags}
+                  onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
                   placeholder="party, celebration, colorful"
                 />
               </div>
@@ -232,7 +309,7 @@ const AdminTemplateUpload = () => {
                   <Label>Public Template</Label>
                   <p className="text-sm text-muted-foreground">Make template visible to all users</p>
                 </div>
-                <Switch checked={isPublic} onCheckedChange={setIsPublic} />
+                <Switch checked={formData.isPublic} onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isPublic: checked }))} />
               </div>
 
               <div className="flex items-center justify-between">
@@ -240,7 +317,7 @@ const AdminTemplateUpload = () => {
                   <Label>Premium Template</Label>
                   <p className="text-sm text-muted-foreground">Require premium access</p>
                 </div>
-                <Switch checked={isPremium} onCheckedChange={setIsPremium} />
+                <Switch checked={formData.isPremium} onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isPremium: checked }))} />
               </div>
             </CardContent>
           </Card>

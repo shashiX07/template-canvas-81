@@ -8,6 +8,9 @@ export interface Template {
   category: string;
   tags: string[];
   htmlContent: string;
+  cssFiles?: Record<string, string>;
+  jsFiles?: Record<string, string>;
+  assets?: Record<string, string>;
   isPublic: boolean;
   isPremium: boolean;
   createdAt: string;

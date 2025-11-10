@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Save, Download, Eye, ArrowLeft, Image as ImageIcon, Palette, Type } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Save, Download, Eye, ArrowLeft, Image as ImageIcon, Palette, Type, Video } from "lucide-react";
 import { templateStorage, customizedTemplateStorage, userStorage, type Template, type CustomizedTemplate } from "@/lib/storage";
 import { toast } from "sonner";
 
@@ -18,8 +19,11 @@ const Editor = () => {
   const [selectedElement, setSelectedElement] = useState<HTMLElement | null>(null);
   const [showTextDialog, setShowTextDialog] = useState(false);
   const [showColorDialog, setShowColorDialog] = useState(false);
+  const [showFontDialog, setShowFontDialog] = useState(false);
   const [textValue, setTextValue] = useState("");
   const [colorValue, setColorValue] = useState("#000000");
+  const [fontFamily, setFontFamily] = useState("Arial");
+  const [fontSize, setFontSize] = useState("16");
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [customData, setCustomData] = useState<Record<string, any>>({});
 
@@ -37,29 +41,88 @@ const Editor = () => {
   }, [id, navigate]);
 
   useEffect(() => {
-    if (htmlContent && iframeRef.current) {
+    if (htmlContent && iframeRef.current && template) {
       const iframe = iframeRef.current;
       const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
       
       if (iframeDoc) {
         iframeDoc.open();
-        iframeDoc.write(htmlContent);
+        
+        // Build complete HTML with CSS and JS
+        let completeHtml = htmlContent;
+        
+        // Inject CSS files
+        if (template.cssFiles) {
+          const cssInjects = Object.entries(template.cssFiles)
+            .map(([_, content]) => `<style>${content}</style>`)
+            .join('\n');
+          completeHtml = completeHtml.replace('</head>', `${cssInjects}\n</head>`);
+        }
+        
+        // Inject JS files
+        if (template.jsFiles) {
+          const jsInjects = Object.entries(template.jsFiles)
+            .map(([_, content]) => `<script>${content}</script>`)
+            .join('\n');
+          completeHtml = completeHtml.replace('</body>', `${jsInjects}\n</body>`);
+        }
+        
+        // Replace asset paths with base64 data
+        if (template.assets) {
+          Object.entries(template.assets).forEach(([filename, dataUrl]) => {
+            const patterns = [
+              new RegExp(`src=["'].*${filename}["']`, 'g'),
+              new RegExp(`href=["'].*${filename}["']`, 'g'),
+              new RegExp(`url\\(['"].*${filename}['"]\\)`, 'g'),
+            ];
+            patterns.forEach(pattern => {
+              completeHtml = completeHtml.replace(pattern, (match) => {
+                if (match.includes('src=')) return `src="${dataUrl}"`;
+                if (match.includes('href=')) return `href="${dataUrl}"`;
+                return `url('${dataUrl}')`;
+              });
+            });
+          });
+        }
+        
+        iframeDoc.write(completeHtml);
         iframeDoc.close();
 
-        // Make elements clickable
+        // Make elements clickable with better highlighting
         const allElements = iframeDoc.body.querySelectorAll('*');
         allElements.forEach((el) => {
-          (el as HTMLElement).style.cursor = 'pointer';
-          el.addEventListener('click', (e) => {
+          const element = el as HTMLElement;
+          element.style.cursor = 'pointer';
+          
+          element.addEventListener('mouseenter', () => {
+            if (element !== selectedElement) {
+              element.style.outline = '2px dashed hsl(var(--primary) / 0.5)';
+            }
+          });
+          
+          element.addEventListener('mouseleave', () => {
+            if (element !== selectedElement) {
+              element.style.outline = 'none';
+            }
+          });
+          
+          element.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            setSelectedElement(el as HTMLElement);
-            (el as HTMLElement).style.outline = '2px solid hsl(var(--primary))';
+            
+            // Remove highlight from previous selection
+            if (selectedElement) {
+              selectedElement.style.outline = 'none';
+            }
+            
+            setSelectedElement(element);
+            element.style.outline = '3px solid hsl(var(--primary))';
+            element.style.outlineOffset = '2px';
           });
         });
       }
     }
-  }, [htmlContent]);
+  }, [htmlContent, template]);
 
   const handleEditText = () => {
     if (selectedElement) {
@@ -104,26 +167,69 @@ const Editor = () => {
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && selectedElement) {
       const reader = new FileReader();
       reader.onload = (event) => {
         const dataUrl = event.target?.result as string;
+        
+        // Store in localStorage (update template assets)
+        if (template) {
+          const updatedAssets = { ...(template.assets || {}), [file.name]: dataUrl };
+          const updatedTemplate = { ...template, assets: updatedAssets };
+          templateStorage.save(updatedTemplate);
+          setTemplate(updatedTemplate);
+        }
+        
         if (selectedElement.tagName === 'IMG') {
           (selectedElement as HTMLImageElement).src = dataUrl;
+        } else if (selectedElement.tagName === 'VIDEO' || selectedElement.tagName === 'SOURCE') {
+          if (selectedElement.tagName === 'VIDEO') {
+            (selectedElement as HTMLVideoElement).src = dataUrl;
+          } else {
+            (selectedElement as HTMLSourceElement).src = dataUrl;
+            const video = selectedElement.parentElement as HTMLVideoElement;
+            video?.load();
+          }
         } else {
           selectedElement.style.backgroundImage = `url(${dataUrl})`;
         }
+        
         const iframeDoc = iframeRef.current?.contentDocument;
         if (iframeDoc) {
           setHtmlContent(iframeDoc.documentElement.outerHTML);
         }
-        toast.success("Image updated");
+        toast.success(`${file.type.includes('video') ? 'Video' : 'Image'} updated`);
       };
       reader.readAsDataURL(file);
     } else {
       toast.error("Please select an element first");
+    }
+  };
+
+  const handleFontChange = () => {
+    if (selectedElement) {
+      const currentFont = window.getComputedStyle(selectedElement).fontFamily;
+      const currentSize = window.getComputedStyle(selectedElement).fontSize;
+      setFontFamily(currentFont.replace(/["']/g, '').split(',')[0]);
+      setFontSize(parseInt(currentSize).toString());
+      setShowFontDialog(true);
+    } else {
+      toast.error("Please select an element first");
+    }
+  };
+
+  const handleSaveFont = () => {
+    if (selectedElement) {
+      selectedElement.style.fontFamily = fontFamily;
+      selectedElement.style.fontSize = `${fontSize}px`;
+      const iframeDoc = iframeRef.current?.contentDocument;
+      if (iframeDoc) {
+        setHtmlContent(iframeDoc.documentElement.outerHTML);
+      }
+      setShowFontDialog(false);
+      toast.success("Font updated");
     }
   };
 
@@ -199,27 +305,45 @@ const Editor = () => {
               <h2 className="text-lg font-semibold">{template.title}</h2>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Button variant="outline" size="sm" onClick={handleEditText}>
                 <Type className="w-4 h-4 mr-2" />
                 Edit Text
               </Button>
+              <Button variant="outline" size="sm" onClick={handleFontChange}>
+                <Type className="w-4 h-4 mr-2" />
+                Font Style
+              </Button>
               <Button variant="outline" size="sm" onClick={handleChangeColor}>
                 <Palette className="w-4 h-4 mr-2" />
-                Change Color
+                Color
               </Button>
               <label>
                 <Button variant="outline" size="sm" asChild>
                   <span>
                     <ImageIcon className="w-4 h-4 mr-2" />
-                    Upload Image
+                    Image
                   </span>
                 </Button>
                 <input
                   type="file"
-                  accept="image/*,video/*"
+                  accept="image/*"
                   className="hidden"
-                  onChange={handleImageUpload}
+                  onChange={handleMediaUpload}
+                />
+              </label>
+              <label>
+                <Button variant="outline" size="sm" asChild>
+                  <span>
+                    <Video className="w-4 h-4 mr-2" />
+                    Video
+                  </span>
+                </Button>
+                <input
+                  type="file"
+                  accept="video/*"
+                  className="hidden"
+                  onChange={handleMediaUpload}
                 />
               </label>
               <Separator orientation="vertical" className="h-6" />
@@ -240,12 +364,13 @@ const Editor = () => {
       </div>
 
       {/* Editor Canvas */}
-      <div className="flex-1 p-4">
+      <div className="flex-1 p-4 min-h-0">
         <Card className="h-full overflow-hidden">
           <iframe
             ref={iframeRef}
             className="w-full h-full border-0"
             title="Template Editor"
+            style={{ minHeight: '100%' }}
           />
         </Card>
       </div>
@@ -289,6 +414,49 @@ const Editor = () => {
             </div>
             <Button onClick={handleSaveColor} className="w-full">
               Save Color
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Font Edit Dialog */}
+      <Dialog open={showFontDialog} onOpenChange={setShowFontDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Font Style</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Font Family</Label>
+              <Select value={fontFamily} onValueChange={setFontFamily}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Arial">Arial</SelectItem>
+                  <SelectItem value="Helvetica">Helvetica</SelectItem>
+                  <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                  <SelectItem value="Georgia">Georgia</SelectItem>
+                  <SelectItem value="Verdana">Verdana</SelectItem>
+                  <SelectItem value="Courier New">Courier New</SelectItem>
+                  <SelectItem value="Comic Sans MS">Comic Sans MS</SelectItem>
+                  <SelectItem value="Impact">Impact</SelectItem>
+                  <SelectItem value="Trebuchet MS">Trebuchet MS</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Font Size (px)</Label>
+              <Input
+                type="number"
+                value={fontSize}
+                onChange={(e) => setFontSize(e.target.value)}
+                min="8"
+                max="72"
+              />
+            </div>
+            <Button onClick={handleSaveFont} className="w-full">
+              Save Font Style
             </Button>
           </div>
         </DialogContent>
