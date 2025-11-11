@@ -5,11 +5,14 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Save, Download, Eye, ArrowLeft, Image as ImageIcon, Palette, Type, Video } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Save, Download, ArrowLeft, Upload } from "lucide-react";
 import { templateStorage, customizedTemplateStorage, userStorage, type Template, type CustomizedTemplate } from "@/lib/storage";
 import { toast } from "sonner";
+
+type ElementType = 'text' | 'image' | 'video' | 'container' | 'none';
 
 const Editor = () => {
   const { id } = useParams();
@@ -17,15 +20,30 @@ const Editor = () => {
   const [template, setTemplate] = useState<Template | null>(null);
   const [htmlContent, setHtmlContent] = useState("");
   const [selectedElement, setSelectedElement] = useState<HTMLElement | null>(null);
-  const [showTextDialog, setShowTextDialog] = useState(false);
-  const [showColorDialog, setShowColorDialog] = useState(false);
-  const [showFontDialog, setShowFontDialog] = useState(false);
-  const [textValue, setTextValue] = useState("");
-  const [colorValue, setColorValue] = useState("#000000");
+  const [elementType, setElementType] = useState<ElementType>('none');
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Text properties
+  const [textContent, setTextContent] = useState("");
+  const [textColor, setTextColor] = useState("#000000");
+  const [backgroundColor, setBackgroundColor] = useState("#ffffff");
   const [fontFamily, setFontFamily] = useState("Arial");
   const [fontSize, setFontSize] = useState("16");
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [customData, setCustomData] = useState<Record<string, any>>({});
+  const [fontWeight, setFontWeight] = useState("400");
+  const [textAlign, setTextAlign] = useState("left");
+  const [textDecoration, setTextDecoration] = useState("none");
+  
+  // Image properties
+  const [imageWidth, setImageWidth] = useState("100");
+  const [imageHeight, setImageHeight] = useState("auto");
+  const [imageFit, setImageFit] = useState("cover");
+  
+  // Video properties
+  const [videoAutoplay, setVideoAutoplay] = useState(false);
+  const [videoMuted, setVideoMuted] = useState(false);
+  const [videoLoop, setVideoLoop] = useState(false);
+  const [videoControls, setVideoControls] = useState(true);
 
   useEffect(() => {
     if (id) {
@@ -93,10 +111,12 @@ const Editor = () => {
         allElements.forEach((el) => {
           const element = el as HTMLElement;
           element.style.cursor = 'pointer';
+          element.style.transition = 'outline 0.2s ease';
           
           element.addEventListener('mouseenter', () => {
             if (element !== selectedElement) {
               element.style.outline = '2px dashed hsl(var(--primary) / 0.5)';
+              element.style.outlineOffset = '2px';
             }
           });
           
@@ -117,56 +137,192 @@ const Editor = () => {
             
             setSelectedElement(element);
             element.style.outline = '3px solid hsl(var(--primary))';
-            element.style.outlineOffset = '2px';
+            element.style.outlineOffset = '4px';
+            element.style.boxShadow = '0 0 0 1px hsl(var(--primary) / 0.2)';
+            
+            // Detect element type and load properties
+            detectElementType(element);
           });
         });
       }
     }
   }, [htmlContent, template]);
-
-  const handleEditText = () => {
-    if (selectedElement) {
-      setTextValue(selectedElement.innerText || "");
-      setShowTextDialog(true);
+  
+  const detectElementType = (element: HTMLElement) => {
+    const tagName = element.tagName.toLowerCase();
+    
+    if (tagName === 'img') {
+      setElementType('image');
+      loadImageProperties(element as HTMLImageElement);
+    } else if (tagName === 'video') {
+      setElementType('video');
+      loadVideoProperties(element as HTMLVideoElement);
+    } else if (element.childNodes.length === 1 && element.childNodes[0].nodeType === Node.TEXT_NODE) {
+      setElementType('text');
+      loadTextProperties(element);
     } else {
-      toast.error("Please select an element first");
+      setElementType('container');
+      loadTextProperties(element);
     }
   };
+  
+  const loadTextProperties = (element: HTMLElement) => {
+    const computedStyle = window.getComputedStyle(element);
+    setTextContent(element.innerText || "");
+    setTextColor(rgbToHex(computedStyle.color));
+    setBackgroundColor(rgbToHex(computedStyle.backgroundColor));
+    setFontFamily(computedStyle.fontFamily.replace(/["']/g, '').split(',')[0]);
+    setFontSize(parseInt(computedStyle.fontSize).toString());
+    setFontWeight(computedStyle.fontWeight);
+    setTextAlign(computedStyle.textAlign);
+    setTextDecoration(computedStyle.textDecoration.split(' ')[0]);
+  };
+  
+  const loadImageProperties = (element: HTMLImageElement) => {
+    const computedStyle = window.getComputedStyle(element);
+    setImageWidth(element.style.width || computedStyle.width);
+    setImageHeight(element.style.height || computedStyle.height);
+    setImageFit(computedStyle.objectFit || 'cover');
+  };
+  
+  const loadVideoProperties = (element: HTMLVideoElement) => {
+    setVideoAutoplay(element.autoplay);
+    setVideoMuted(element.muted);
+    setVideoLoop(element.loop);
+    setVideoControls(element.controls);
+  };
+  
+  const rgbToHex = (rgb: string): string => {
+    if (rgb.startsWith('#')) return rgb;
+    const result = rgb.match(/\d+/g);
+    if (!result) return '#000000';
+    const r = parseInt(result[0]);
+    const g = parseInt(result[1]);
+    const b = parseInt(result[2]);
+    return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+  };
 
-  const handleSaveText = () => {
+  // Real-time update handlers
+  const updateTextContent = (value: string) => {
+    setTextContent(value);
     if (selectedElement) {
-      selectedElement.innerText = textValue;
-      const iframeDoc = iframeRef.current?.contentDocument;
-      if (iframeDoc) {
-        setHtmlContent(iframeDoc.documentElement.outerHTML);
-      }
-      setShowTextDialog(false);
-      toast.success("Text updated");
+      selectedElement.innerText = value;
+      updateHtmlContent();
     }
   };
-
-  const handleChangeColor = () => {
+  
+  const updateTextColor = (value: string) => {
+    setTextColor(value);
     if (selectedElement) {
-      const currentColor = window.getComputedStyle(selectedElement).color;
-      setColorValue(currentColor);
-      setShowColorDialog(true);
-    } else {
-      toast.error("Please select an element first");
+      selectedElement.style.color = value;
+      updateHtmlContent();
     }
   };
-
-  const handleSaveColor = () => {
+  
+  const updateBackgroundColor = (value: string) => {
+    setBackgroundColor(value);
     if (selectedElement) {
-      selectedElement.style.color = colorValue;
-      const iframeDoc = iframeRef.current?.contentDocument;
-      if (iframeDoc) {
-        setHtmlContent(iframeDoc.documentElement.outerHTML);
-      }
-      setShowColorDialog(false);
-      toast.success("Color updated");
+      selectedElement.style.backgroundColor = value;
+      updateHtmlContent();
     }
   };
-
+  
+  const updateFontFamily = (value: string) => {
+    setFontFamily(value);
+    if (selectedElement) {
+      selectedElement.style.fontFamily = value;
+      updateHtmlContent();
+    }
+  };
+  
+  const updateFontSize = (value: string) => {
+    setFontSize(value);
+    if (selectedElement) {
+      selectedElement.style.fontSize = `${value}px`;
+      updateHtmlContent();
+    }
+  };
+  
+  const updateFontWeight = (value: string) => {
+    setFontWeight(value);
+    if (selectedElement) {
+      selectedElement.style.fontWeight = value;
+      updateHtmlContent();
+    }
+  };
+  
+  const updateTextAlign = (value: string) => {
+    setTextAlign(value);
+    if (selectedElement) {
+      selectedElement.style.textAlign = value;
+      updateHtmlContent();
+    }
+  };
+  
+  const updateTextDecoration = (value: string) => {
+    setTextDecoration(value);
+    if (selectedElement) {
+      selectedElement.style.textDecoration = value;
+      updateHtmlContent();
+    }
+  };
+  
+  const updateImageWidth = (value: string) => {
+    setImageWidth(value);
+    if (selectedElement && selectedElement.tagName === 'IMG') {
+      selectedElement.style.width = value.includes('%') || value.includes('px') ? value : `${value}px`;
+      updateHtmlContent();
+    }
+  };
+  
+  const updateImageHeight = (value: string) => {
+    setImageHeight(value);
+    if (selectedElement && selectedElement.tagName === 'IMG') {
+      selectedElement.style.height = value === 'auto' ? 'auto' : value.includes('%') || value.includes('px') ? value : `${value}px`;
+      updateHtmlContent();
+    }
+  };
+  
+  const updateImageFit = (value: string) => {
+    setImageFit(value);
+    if (selectedElement && selectedElement.tagName === 'IMG') {
+      (selectedElement as HTMLImageElement).style.objectFit = value as any;
+      updateHtmlContent();
+    }
+  };
+  
+  const updateVideoAutoplay = (value: boolean) => {
+    setVideoAutoplay(value);
+    if (selectedElement && selectedElement.tagName === 'VIDEO') {
+      (selectedElement as HTMLVideoElement).autoplay = value;
+      updateHtmlContent();
+    }
+  };
+  
+  const updateVideoMuted = (value: boolean) => {
+    setVideoMuted(value);
+    if (selectedElement && selectedElement.tagName === 'VIDEO') {
+      (selectedElement as HTMLVideoElement).muted = value;
+      updateHtmlContent();
+    }
+  };
+  
+  const updateVideoLoop = (value: boolean) => {
+    setVideoLoop(value);
+    if (selectedElement && selectedElement.tagName === 'VIDEO') {
+      (selectedElement as HTMLVideoElement).loop = value;
+      updateHtmlContent();
+    }
+  };
+  
+  const updateVideoControls = (value: boolean) => {
+    setVideoControls(value);
+    if (selectedElement && selectedElement.tagName === 'VIDEO') {
+      (selectedElement as HTMLVideoElement).controls = value;
+      updateHtmlContent();
+    }
+  };
+  
   const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && selectedElement) {
@@ -184,52 +340,22 @@ const Editor = () => {
         
         if (selectedElement.tagName === 'IMG') {
           (selectedElement as HTMLImageElement).src = dataUrl;
-        } else if (selectedElement.tagName === 'VIDEO' || selectedElement.tagName === 'SOURCE') {
-          if (selectedElement.tagName === 'VIDEO') {
-            (selectedElement as HTMLVideoElement).src = dataUrl;
-          } else {
-            (selectedElement as HTMLSourceElement).src = dataUrl;
-            const video = selectedElement.parentElement as HTMLVideoElement;
-            video?.load();
-          }
-        } else {
-          selectedElement.style.backgroundImage = `url(${dataUrl})`;
+        } else if (selectedElement.tagName === 'VIDEO') {
+          (selectedElement as HTMLVideoElement).src = dataUrl;
+          (selectedElement as HTMLVideoElement).load();
         }
         
-        const iframeDoc = iframeRef.current?.contentDocument;
-        if (iframeDoc) {
-          setHtmlContent(iframeDoc.documentElement.outerHTML);
-        }
+        updateHtmlContent();
         toast.success(`${file.type.includes('video') ? 'Video' : 'Image'} updated`);
       };
       reader.readAsDataURL(file);
-    } else {
-      toast.error("Please select an element first");
     }
   };
-
-  const handleFontChange = () => {
-    if (selectedElement) {
-      const currentFont = window.getComputedStyle(selectedElement).fontFamily;
-      const currentSize = window.getComputedStyle(selectedElement).fontSize;
-      setFontFamily(currentFont.replace(/["']/g, '').split(',')[0]);
-      setFontSize(parseInt(currentSize).toString());
-      setShowFontDialog(true);
-    } else {
-      toast.error("Please select an element first");
-    }
-  };
-
-  const handleSaveFont = () => {
-    if (selectedElement) {
-      selectedElement.style.fontFamily = fontFamily;
-      selectedElement.style.fontSize = `${fontSize}px`;
-      const iframeDoc = iframeRef.current?.contentDocument;
-      if (iframeDoc) {
-        setHtmlContent(iframeDoc.documentElement.outerHTML);
-      }
-      setShowFontDialog(false);
-      toast.success("Font updated");
+  
+  const updateHtmlContent = () => {
+    const iframeDoc = iframeRef.current?.contentDocument;
+    if (iframeDoc) {
+      setHtmlContent(iframeDoc.documentElement.outerHTML);
     }
   };
 
@@ -245,7 +371,7 @@ const Editor = () => {
       userId: user.id,
       templateId: template?.id || "",
       customizedHtml: htmlContent,
-      customData: customData,
+      customData: {},
       isDraft,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -290,7 +416,7 @@ const Editor = () => {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Toolbar */}
       <div className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Button
@@ -305,48 +431,7 @@ const Editor = () => {
               <h2 className="text-lg font-semibold">{template.title}</h2>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              <Button variant="outline" size="sm" onClick={handleEditText}>
-                <Type className="w-4 h-4 mr-2" />
-                Edit Text
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleFontChange}>
-                <Type className="w-4 h-4 mr-2" />
-                Font Style
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleChangeColor}>
-                <Palette className="w-4 h-4 mr-2" />
-                Color
-              </Button>
-              <label>
-                <Button variant="outline" size="sm" asChild>
-                  <span>
-                    <ImageIcon className="w-4 h-4 mr-2" />
-                    Image
-                  </span>
-                </Button>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleMediaUpload}
-                />
-              </label>
-              <label>
-                <Button variant="outline" size="sm" asChild>
-                  <span>
-                    <Video className="w-4 h-4 mr-2" />
-                    Video
-                  </span>
-                </Button>
-                <input
-                  type="file"
-                  accept="video/*"
-                  className="hidden"
-                  onChange={handleMediaUpload}
-                />
-              </label>
-              <Separator orientation="vertical" className="h-6" />
+            <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => handleSave(true)}>
                 Save Draft
               </Button>
@@ -363,104 +448,291 @@ const Editor = () => {
         </div>
       </div>
 
-      {/* Editor Canvas */}
-      <div className="flex-1 p-4 min-h-0">
-        <Card className="h-full overflow-hidden">
-          <iframe
-            ref={iframeRef}
-            className="w-full h-full border-0"
-            title="Template Editor"
-            style={{ minHeight: '100%' }}
-          />
-        </Card>
+      {/* Editor Layout */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Canvas */}
+        <div className="flex-1 p-4">
+          <Card className="h-full overflow-hidden">
+            <iframe
+              ref={iframeRef}
+              className="w-full h-full border-0"
+              title="Template Editor"
+            />
+          </Card>
+        </div>
+
+        {/* Properties Sidebar */}
+        <div className="w-80 border-l bg-card overflow-y-auto">
+          <div className="p-4 border-b">
+            <h3 className="font-semibold text-lg">Properties</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              {elementType === 'none' ? 'Click an element to edit' : `Editing ${elementType}`}
+            </p>
+          </div>
+
+          {elementType === 'none' && (
+            <div className="p-4 text-center text-muted-foreground">
+              <p>Select an element in the canvas to see its properties</p>
+            </div>
+          )}
+
+          {(elementType === 'text' || elementType === 'container') && (
+            <div className="p-4 space-y-4">
+              <div>
+                <Label>Text Content</Label>
+                <Textarea
+                  value={textContent}
+                  onChange={(e) => updateTextContent(e.target.value)}
+                  placeholder="Enter text..."
+                  rows={4}
+                  className="mt-1.5"
+                />
+              </div>
+
+              <Separator />
+
+              <div>
+                <Label>Text Color</Label>
+                <div className="flex gap-2 mt-1.5">
+                  <Input
+                    type="color"
+                    value={textColor}
+                    onChange={(e) => updateTextColor(e.target.value)}
+                    className="w-20 h-10 cursor-pointer"
+                  />
+                  <Input
+                    type="text"
+                    value={textColor}
+                    onChange={(e) => updateTextColor(e.target.value)}
+                    placeholder="#000000"
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label>Background Color</Label>
+                <div className="flex gap-2 mt-1.5">
+                  <Input
+                    type="color"
+                    value={backgroundColor}
+                    onChange={(e) => updateBackgroundColor(e.target.value)}
+                    className="w-20 h-10 cursor-pointer"
+                  />
+                  <Input
+                    type="text"
+                    value={backgroundColor}
+                    onChange={(e) => updateBackgroundColor(e.target.value)}
+                    placeholder="#ffffff"
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+
+              <Separator />
+
+              <div>
+                <Label>Font Family</Label>
+                <Select value={fontFamily} onValueChange={updateFontFamily}>
+                  <SelectTrigger className="mt-1.5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Arial">Arial</SelectItem>
+                    <SelectItem value="Helvetica">Helvetica</SelectItem>
+                    <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                    <SelectItem value="Georgia">Georgia</SelectItem>
+                    <SelectItem value="Verdana">Verdana</SelectItem>
+                    <SelectItem value="Courier New">Courier New</SelectItem>
+                    <SelectItem value="Comic Sans MS">Comic Sans MS</SelectItem>
+                    <SelectItem value="Impact">Impact</SelectItem>
+                    <SelectItem value="Trebuchet MS">Trebuchet MS</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Font Size (px)</Label>
+                <Input
+                  type="number"
+                  value={fontSize}
+                  onChange={(e) => updateFontSize(e.target.value)}
+                  min="8"
+                  max="200"
+                  className="mt-1.5"
+                />
+              </div>
+
+              <div>
+                <Label>Font Weight</Label>
+                <Select value={fontWeight} onValueChange={updateFontWeight}>
+                  <SelectTrigger className="mt-1.5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="300">Light (300)</SelectItem>
+                    <SelectItem value="400">Normal (400)</SelectItem>
+                    <SelectItem value="500">Medium (500)</SelectItem>
+                    <SelectItem value="600">Semi Bold (600)</SelectItem>
+                    <SelectItem value="700">Bold (700)</SelectItem>
+                    <SelectItem value="800">Extra Bold (800)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Text Align</Label>
+                <Select value={textAlign} onValueChange={updateTextAlign}>
+                  <SelectTrigger className="mt-1.5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="left">Left</SelectItem>
+                    <SelectItem value="center">Center</SelectItem>
+                    <SelectItem value="right">Right</SelectItem>
+                    <SelectItem value="justify">Justify</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Text Decoration</Label>
+                <Select value={textDecoration} onValueChange={updateTextDecoration}>
+                  <SelectTrigger className="mt-1.5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="underline">Underline</SelectItem>
+                    <SelectItem value="overline">Overline</SelectItem>
+                    <SelectItem value="line-through">Line Through</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          {elementType === 'image' && (
+            <div className="p-4 space-y-4">
+              <div>
+                <Label>Upload New Image</Label>
+                <Button
+                  variant="outline"
+                  className="w-full mt-1.5"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Choose Image
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleMediaUpload}
+                />
+              </div>
+
+              <Separator />
+
+              <div>
+                <Label>Width</Label>
+                <Input
+                  type="text"
+                  value={imageWidth}
+                  onChange={(e) => updateImageWidth(e.target.value)}
+                  placeholder="100% or 300px"
+                  className="mt-1.5"
+                />
+              </div>
+
+              <div>
+                <Label>Height</Label>
+                <Input
+                  type="text"
+                  value={imageHeight}
+                  onChange={(e) => updateImageHeight(e.target.value)}
+                  placeholder="auto or 200px"
+                  className="mt-1.5"
+                />
+              </div>
+
+              <div>
+                <Label>Object Fit</Label>
+                <Select value={imageFit} onValueChange={updateImageFit}>
+                  <SelectTrigger className="mt-1.5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cover">Cover</SelectItem>
+                    <SelectItem value="contain">Contain</SelectItem>
+                    <SelectItem value="fill">Fill</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="scale-down">Scale Down</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          {elementType === 'video' && (
+            <div className="p-4 space-y-4">
+              <div>
+                <Label>Upload New Video</Label>
+                <Button
+                  variant="outline"
+                  className="w-full mt-1.5"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Choose Video
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="video/*"
+                  className="hidden"
+                  onChange={handleMediaUpload}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between">
+                <Label>Autoplay</Label>
+                <Switch
+                  checked={videoAutoplay}
+                  onCheckedChange={updateVideoAutoplay}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label>Muted</Label>
+                <Switch
+                  checked={videoMuted}
+                  onCheckedChange={updateVideoMuted}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label>Loop</Label>
+                <Switch
+                  checked={videoLoop}
+                  onCheckedChange={updateVideoLoop}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label>Show Controls</Label>
+                <Switch
+                  checked={videoControls}
+                  onCheckedChange={updateVideoControls}
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-
-      {/* Text Edit Dialog */}
-      <Dialog open={showTextDialog} onOpenChange={setShowTextDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Text</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Text Content</Label>
-              <Input
-                value={textValue}
-                onChange={(e) => setTextValue(e.target.value)}
-                placeholder="Enter text..."
-              />
-            </div>
-            <Button onClick={handleSaveText} className="w-full">
-              Save Text
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Color Edit Dialog */}
-      <Dialog open={showColorDialog} onOpenChange={setShowColorDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Change Color</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Color</Label>
-              <Input
-                type="color"
-                value={colorValue}
-                onChange={(e) => setColorValue(e.target.value)}
-              />
-            </div>
-            <Button onClick={handleSaveColor} className="w-full">
-              Save Color
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Font Edit Dialog */}
-      <Dialog open={showFontDialog} onOpenChange={setShowFontDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Change Font Style</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Font Family</Label>
-              <Select value={fontFamily} onValueChange={setFontFamily}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Arial">Arial</SelectItem>
-                  <SelectItem value="Helvetica">Helvetica</SelectItem>
-                  <SelectItem value="Times New Roman">Times New Roman</SelectItem>
-                  <SelectItem value="Georgia">Georgia</SelectItem>
-                  <SelectItem value="Verdana">Verdana</SelectItem>
-                  <SelectItem value="Courier New">Courier New</SelectItem>
-                  <SelectItem value="Comic Sans MS">Comic Sans MS</SelectItem>
-                  <SelectItem value="Impact">Impact</SelectItem>
-                  <SelectItem value="Trebuchet MS">Trebuchet MS</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Font Size (px)</Label>
-              <Input
-                type="number"
-                value={fontSize}
-                onChange={(e) => setFontSize(e.target.value)}
-                min="8"
-                max="72"
-              />
-            </div>
-            <Button onClick={handleSaveFont} className="w-full">
-              Save Font Style
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
