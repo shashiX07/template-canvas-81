@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Star, Download, Eye, Pencil, ArrowLeft, Calendar, User } from "lucide-react";
 import { templateStorage, type Template } from "@/lib/storage";
 import { toast } from "sonner";
+import { Header } from "@/components/Header";
 
 const TemplateDetail = () => {
   const { id } = useParams();
@@ -35,6 +36,8 @@ const TemplateDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
+      
       {/* Header */}
       <div className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">

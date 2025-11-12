@@ -1,4 +1,4 @@
-import { User, FileText, Settings, Shield, Home } from "lucide-react";
+import { User, FileText, Settings, Shield, Home, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 const menuItems = [
   { title: "Dashboard", url: "/profile", icon: Home, end: true },
@@ -26,6 +27,7 @@ const menuItems = [
 export function ProfileSidebar() {
   const { state } = useSidebar();
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const isCollapsed = state === "collapsed";
 
   return (
@@ -65,7 +67,15 @@ export function ProfileSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <div className="p-4 border-t">
+      <div className="p-4 border-t space-y-2">
+        <Button
+          variant="ghost"
+          className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+          onClick={logout}
+        >
+          <LogOut className="h-4 w-4" />
+          {!isCollapsed && <span className="ml-2">Logout</span>}
+        </Button>
         <SidebarTrigger className="w-full" />
       </div>
     </Sidebar>

@@ -45,6 +45,7 @@ const Admin = () => {
     const newUser: User = {
       id: `user-${Date.now()}`,
       email: newUserEmail,
+      password: 'password123',
       name: newUserName,
       isVerified: false,
       isAdmin: newUserIsAdmin,

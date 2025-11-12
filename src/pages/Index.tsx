@@ -1,12 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Sparkles, Palette, Zap, Shield, Download, Star } from "lucide-react";
+import { Sparkles, Palette, Zap, Shield, Download, Star, LogIn } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { initializeMockData } from "@/lib/storage";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
 
   useEffect(() => {
     initializeMockData();
@@ -91,14 +93,26 @@ const Index = () => {
             >
               Browse Templates
             </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="text-lg px-8"
-              onClick={() => navigate('/profile')}
-            >
-              View My Projects
-            </Button>
+            {isAuthenticated ? (
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="text-lg px-8"
+                onClick={() => navigate('/profile')}
+              >
+                View My Projects
+              </Button>
+            ) : (
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="text-lg px-8"
+                onClick={() => navigate('/auth')}
+              >
+                <LogIn className="w-5 h-5 mr-2" />
+                Login / Sign Up
+              </Button>
+            )}
           </div>
 
           <div className="flex items-center justify-center gap-8 mt-12 text-sm text-muted-foreground">

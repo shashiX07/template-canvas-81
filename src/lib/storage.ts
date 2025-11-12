@@ -23,6 +23,7 @@ export interface Template {
 export interface User {
   id: string;
   email: string;
+  password: string;
   name: string;
   dob?: string;
   phone?: string;
@@ -273,6 +274,7 @@ export const initializeMockData = (): void => {
     const adminUser: User = {
       id: 'admin-1',
       email: 'admin@example.com',
+      password: 'admin123',
       name: 'Admin User',
       dob: '1990-01-01',
       avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
@@ -286,6 +288,5 @@ export const initializeMockData = (): void => {
     };
     
     userStorage.save(adminUser);
-    userStorage.setCurrentUser(adminUser);
   }
 };

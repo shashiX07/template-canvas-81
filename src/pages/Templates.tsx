@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, SlidersHorizontal, Eye, Info, Pencil, Star, Download } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { templateStorage, type Template } from "@/lib/storage";
+import { Header } from "@/components/Header";
 
 const Templates = () => {
   const navigate = useNavigate();
@@ -53,6 +54,8 @@ const Templates = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
+      
       {/* Header */}
       <div className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
