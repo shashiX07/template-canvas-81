@@ -202,12 +202,11 @@ const Editor = () => {
     return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
   };
 
-  // Real-time update handlers
+  // Real-time update handlers - Changes are applied directly to DOM without reloading
   const updateTextContent = (value: string) => {
     setTextContent(value);
     if (selectedElement) {
       selectedElement.innerText = value;
-      updateHtmlContent();
     }
   };
   
@@ -215,7 +214,6 @@ const Editor = () => {
     setTextColor(value);
     if (selectedElement) {
       selectedElement.style.color = value;
-      updateHtmlContent();
     }
   };
   
@@ -223,7 +221,6 @@ const Editor = () => {
     setBackgroundColor(value);
     if (selectedElement) {
       selectedElement.style.backgroundColor = value;
-      updateHtmlContent();
     }
   };
   
@@ -231,7 +228,6 @@ const Editor = () => {
     setFontFamily(value);
     if (selectedElement) {
       selectedElement.style.fontFamily = value;
-      updateHtmlContent();
     }
   };
   
@@ -239,7 +235,6 @@ const Editor = () => {
     setFontSize(value);
     if (selectedElement) {
       selectedElement.style.fontSize = `${value}px`;
-      updateHtmlContent();
     }
   };
   
@@ -247,7 +242,6 @@ const Editor = () => {
     setFontWeight(value);
     if (selectedElement) {
       selectedElement.style.fontWeight = value;
-      updateHtmlContent();
     }
   };
   
@@ -255,7 +249,6 @@ const Editor = () => {
     setTextAlign(value);
     if (selectedElement) {
       selectedElement.style.textAlign = value;
-      updateHtmlContent();
     }
   };
   
@@ -263,7 +256,6 @@ const Editor = () => {
     setTextDecoration(value);
     if (selectedElement) {
       selectedElement.style.textDecoration = value;
-      updateHtmlContent();
     }
   };
   
@@ -271,7 +263,6 @@ const Editor = () => {
     setImageWidth(value);
     if (selectedElement && selectedElement.tagName === 'IMG') {
       selectedElement.style.width = value.includes('%') || value.includes('px') ? value : `${value}px`;
-      updateHtmlContent();
     }
   };
   
@@ -279,7 +270,6 @@ const Editor = () => {
     setImageHeight(value);
     if (selectedElement && selectedElement.tagName === 'IMG') {
       selectedElement.style.height = value === 'auto' ? 'auto' : value.includes('%') || value.includes('px') ? value : `${value}px`;
-      updateHtmlContent();
     }
   };
   
@@ -287,7 +277,6 @@ const Editor = () => {
     setImageFit(value);
     if (selectedElement && selectedElement.tagName === 'IMG') {
       (selectedElement as HTMLImageElement).style.objectFit = value as any;
-      updateHtmlContent();
     }
   };
   
@@ -295,7 +284,6 @@ const Editor = () => {
     setVideoAutoplay(value);
     if (selectedElement && selectedElement.tagName === 'VIDEO') {
       (selectedElement as HTMLVideoElement).autoplay = value;
-      updateHtmlContent();
     }
   };
   
@@ -303,7 +291,6 @@ const Editor = () => {
     setVideoMuted(value);
     if (selectedElement && selectedElement.tagName === 'VIDEO') {
       (selectedElement as HTMLVideoElement).muted = value;
-      updateHtmlContent();
     }
   };
   
@@ -311,7 +298,6 @@ const Editor = () => {
     setVideoLoop(value);
     if (selectedElement && selectedElement.tagName === 'VIDEO') {
       (selectedElement as HTMLVideoElement).loop = value;
-      updateHtmlContent();
     }
   };
   
@@ -319,7 +305,6 @@ const Editor = () => {
     setVideoControls(value);
     if (selectedElement && selectedElement.tagName === 'VIDEO') {
       (selectedElement as HTMLVideoElement).controls = value;
-      updateHtmlContent();
     }
   };
   
@@ -345,7 +330,6 @@ const Editor = () => {
           (selectedElement as HTMLVideoElement).load();
         }
         
-        updateHtmlContent();
         toast.success(`${file.type.includes('video') ? 'Video' : 'Image'} updated`);
       };
       reader.readAsDataURL(file);
@@ -366,35 +350,43 @@ const Editor = () => {
       return;
     }
 
-    const customized: CustomizedTemplate = {
-      id: `custom-${Date.now()}`,
-      userId: user.id,
-      templateId: template?.id || "",
-      customizedHtml: htmlContent,
-      customData: {},
-      isDraft,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    // Capture current state from iframe before saving
+    updateHtmlContent();
+    
+    // Use a timeout to ensure htmlContent state is updated
+    setTimeout(() => {
+      const customized: CustomizedTemplate = {
+        id: `custom-${Date.now()}`,
+        userId: user.id,
+        templateId: template?.id || "",
+        customizedHtml: iframeRef.current?.contentDocument?.documentElement.outerHTML || htmlContent,
+        customData: {},
+        isDraft,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-    customizedTemplateStorage.save(customized);
-    
-    if (isDraft) {
-      if (!user.draftTemplates.includes(customized.id)) {
-        user.draftTemplates.push(customized.id);
+      customizedTemplateStorage.save(customized);
+      
+      if (isDraft) {
+        if (!user.draftTemplates.includes(customized.id)) {
+          user.draftTemplates.push(customized.id);
+        }
+      } else {
+        if (!user.customizedTemplates.includes(customized.id)) {
+          user.customizedTemplates.push(customized.id);
+        }
       }
-    } else {
-      if (!user.customizedTemplates.includes(customized.id)) {
-        user.customizedTemplates.push(customized.id);
-      }
-    }
-    
-    userStorage.save(user);
-    toast.success(isDraft ? "Saved as draft" : "Template saved");
+      
+      userStorage.save(user);
+      toast.success(isDraft ? "Saved as draft" : "Template saved");
+    }, 100);
   };
 
   const handleDownload = () => {
-    const blob = new Blob([htmlContent], { type: 'text/html' });
+    // Get current HTML from iframe
+    const currentHtml = iframeRef.current?.contentDocument?.documentElement.outerHTML || htmlContent;
+    const blob = new Blob([currentHtml], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
