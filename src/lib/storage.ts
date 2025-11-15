@@ -1,5 +1,7 @@
 // Local storage utilities for managing templates, users, and admin data
 
+export type UserRole = 'user' | 'freelancer' | 'admin' | 'superadmin';
+
 export interface Template {
   id: string;
   title: string;
@@ -20,11 +22,94 @@ export interface Template {
   rating: number;
 }
 
+export interface FreelancerProfile {
+  userId: string;
+  professionalTitle: string;
+  bio: string;
+  expertise: string[];
+  experienceYears: number;
+  portfolioUrl?: string;
+  websiteUrl?: string;
+  linkedinUrl?: string;
+  githubUrl?: string;
+  resumeUrl: string;
+  resumeFileName: string;
+  portfolioImages: string[];
+  verificationStatus: 'pending' | 'approved' | 'rejected';
+  verificationNotes?: string;
+  approvedAt?: string;
+  approvedBy?: string;
+  totalTemplates: number;
+  approvedTemplates: number;
+  totalDownloads: number;
+  totalEarnings: number;
+  rating: number;
+  reviewCount: number;
+  isActive: boolean;
+  acceptingWork: boolean;
+  minProjectBudget?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FreelancerTemplate extends Template {
+  freelancerId: string;
+  submissionStatus: 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'published';
+  reviewNotes?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  submittedAt?: string;
+  price?: number;
+  earnings: number;
+  salesCount: number;
+  version: string;
+  changelog?: string;
+  compatibilityNotes?: string;
+}
+
+export interface FreelancerEarning {
+  id: string;
+  freelancerId: string;
+  templateId: string;
+  amount: number;
+  transactionType: 'sale' | 'refund' | 'bonus' | 'withdrawal';
+  status: 'pending' | 'completed' | 'cancelled';
+  description: string;
+  createdAt: string;
+  processedAt?: string;
+}
+
+export interface FreelancerPayout {
+  id: string;
+  freelancerId: string;
+  amount: number;
+  paymentMethod: 'paypal' | 'bank_transfer' | 'stripe';
+  paymentDetails: Record<string, any>;
+  status: 'requested' | 'processing' | 'completed' | 'failed';
+  requestedAt: string;
+  processedAt?: string;
+  transactionId?: string;
+  notes?: string;
+}
+
+export interface FreelancerReview {
+  id: string;
+  freelancerId: string;
+  templateId: string;
+  userId: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+  response?: string;
+  respondedAt?: string;
+}
+
 export interface User {
   id: string;
   email: string;
   password: string;
   name: string;
+  role: UserRole;
   dob?: string;
   phone?: string;
   avatar?: string;
@@ -35,6 +120,7 @@ export interface User {
   createdAt: string;
   customizedTemplates: string[];
   draftTemplates: string[];
+  freelancerProfileId?: string;
 }
 
 export interface CustomizedTemplate {
@@ -54,6 +140,11 @@ const STORAGE_KEYS = {
   USERS: 'users',
   CURRENT_USER: 'currentUser',
   CUSTOMIZED_TEMPLATES: 'customizedTemplates',
+  FREELANCER_PROFILES: 'freelancerProfiles',
+  FREELANCER_TEMPLATES: 'freelancerTemplates',
+  FREELANCER_EARNINGS: 'freelancerEarnings',
+  FREELANCER_PAYOUTS: 'freelancerPayouts',
+  FREELANCER_REVIEWS: 'freelancerReviews',
 } as const;
 
 // Generic storage functions
@@ -213,6 +304,184 @@ export const customizedTemplateStorage = {
   },
 };
 
+// Freelancer Profile Storage
+export const freelancerStorage = {
+  getAll: (): FreelancerProfile[] => {
+    return storage.get<FreelancerProfile[]>(STORAGE_KEYS.FREELANCER_PROFILES) || [];
+  },
+  
+  getById: (userId: string): FreelancerProfile | null => {
+    const profiles = freelancerStorage.getAll();
+    return profiles.find(p => p.userId === userId) || null;
+  },
+  
+  getApproved: (): FreelancerProfile[] => {
+    return freelancerStorage.getAll().filter(p => p.verificationStatus === 'approved');
+  },
+  
+  getPending: (): FreelancerProfile[] => {
+    return freelancerStorage.getAll().filter(p => p.verificationStatus === 'pending');
+  },
+  
+  save: (profile: FreelancerProfile): void => {
+    const profiles = freelancerStorage.getAll();
+    const index = profiles.findIndex(p => p.userId === profile.userId);
+    
+    if (index >= 0) {
+      profiles[index] = profile;
+    } else {
+      profiles.push(profile);
+    }
+    
+    storage.set(STORAGE_KEYS.FREELANCER_PROFILES, profiles);
+  },
+  
+  delete: (userId: string): void => {
+    const profiles = freelancerStorage.getAll();
+    storage.set(STORAGE_KEYS.FREELANCER_PROFILES, profiles.filter(p => p.userId !== userId));
+  },
+};
+
+// Freelancer Template Storage
+export const freelancerTemplateStorage = {
+  getAll: (): FreelancerTemplate[] => {
+    return storage.get<FreelancerTemplate[]>(STORAGE_KEYS.FREELANCER_TEMPLATES) || [];
+  },
+  
+  getByFreelancerId: (freelancerId: string): FreelancerTemplate[] => {
+    return freelancerTemplateStorage.getAll().filter(t => t.freelancerId === freelancerId);
+  },
+  
+  getByStatus: (status: string): FreelancerTemplate[] => {
+    return freelancerTemplateStorage.getAll().filter(t => t.submissionStatus === status);
+  },
+  
+  getById: (id: string): FreelancerTemplate | null => {
+    const templates = freelancerTemplateStorage.getAll();
+    return templates.find(t => t.id === id) || null;
+  },
+  
+  save: (template: FreelancerTemplate): void => {
+    const templates = freelancerTemplateStorage.getAll();
+    const index = templates.findIndex(t => t.id === template.id);
+    
+    if (index >= 0) {
+      templates[index] = template;
+    } else {
+      templates.push(template);
+    }
+    
+    storage.set(STORAGE_KEYS.FREELANCER_TEMPLATES, templates);
+  },
+  
+  delete: (id: string): void => {
+    const templates = freelancerTemplateStorage.getAll();
+    storage.set(STORAGE_KEYS.FREELANCER_TEMPLATES, templates.filter(t => t.id !== id));
+  },
+};
+
+// Earnings Storage
+export const earningsStorage = {
+  getAll: (): FreelancerEarning[] => {
+    return storage.get<FreelancerEarning[]>(STORAGE_KEYS.FREELANCER_EARNINGS) || [];
+  },
+  
+  getByFreelancerId: (freelancerId: string): FreelancerEarning[] => {
+    return earningsStorage.getAll().filter(e => e.freelancerId === freelancerId);
+  },
+  
+  getTotalEarnings: (freelancerId: string): number => {
+    const earnings = earningsStorage.getByFreelancerId(freelancerId);
+    return earnings
+      .filter(e => e.status === 'completed' && e.transactionType !== 'withdrawal')
+      .reduce((sum, e) => sum + e.amount, 0);
+  },
+  
+  getAvailableBalance: (freelancerId: string): number => {
+    const earnings = earningsStorage.getByFreelancerId(freelancerId);
+    const payouts = payoutStorage.getByFreelancerId(freelancerId);
+    
+    const totalEarned = earnings
+      .filter(e => e.status === 'completed' && e.transactionType !== 'withdrawal')
+      .reduce((sum, e) => sum + e.amount, 0);
+    
+    const totalWithdrawn = payouts
+      .filter(p => p.status === 'completed')
+      .reduce((sum, p) => sum + p.amount, 0);
+    
+    return totalEarned - totalWithdrawn;
+  },
+  
+  save: (earning: FreelancerEarning): void => {
+    const earnings = earningsStorage.getAll();
+    const index = earnings.findIndex(e => e.id === earning.id);
+    
+    if (index >= 0) {
+      earnings[index] = earning;
+    } else {
+      earnings.push(earning);
+    }
+    
+    storage.set(STORAGE_KEYS.FREELANCER_EARNINGS, earnings);
+  },
+};
+
+// Payout Storage
+export const payoutStorage = {
+  getAll: (): FreelancerPayout[] => {
+    return storage.get<FreelancerPayout[]>(STORAGE_KEYS.FREELANCER_PAYOUTS) || [];
+  },
+  
+  getByFreelancerId: (freelancerId: string): FreelancerPayout[] => {
+    return payoutStorage.getAll().filter(p => p.freelancerId === freelancerId);
+  },
+  
+  getPending: (): FreelancerPayout[] => {
+    return payoutStorage.getAll().filter(p => p.status === 'requested');
+  },
+  
+  save: (payout: FreelancerPayout): void => {
+    const payouts = payoutStorage.getAll();
+    const index = payouts.findIndex(p => p.id === payout.id);
+    
+    if (index >= 0) {
+      payouts[index] = payout;
+    } else {
+      payouts.push(payout);
+    }
+    
+    storage.set(STORAGE_KEYS.FREELANCER_PAYOUTS, payouts);
+  },
+};
+
+// Review Storage
+export const reviewStorage = {
+  getAll: (): FreelancerReview[] => {
+    return storage.get<FreelancerReview[]>(STORAGE_KEYS.FREELANCER_REVIEWS) || [];
+  },
+  
+  getByFreelancerId: (freelancerId: string): FreelancerReview[] => {
+    return reviewStorage.getAll().filter(r => r.freelancerId === freelancerId);
+  },
+  
+  getByTemplateId: (templateId: string): FreelancerReview[] => {
+    return reviewStorage.getAll().filter(r => r.templateId === templateId);
+  },
+  
+  save: (review: FreelancerReview): void => {
+    const reviews = reviewStorage.getAll();
+    const index = reviews.findIndex(r => r.id === review.id);
+    
+    if (index >= 0) {
+      reviews[index] = review;
+    } else {
+      reviews.push(review);
+    }
+    
+    storage.set(STORAGE_KEYS.FREELANCER_REVIEWS, reviews);
+  },
+};
+
 // Initialize with mock data if empty
 export const initializeMockData = (): void => {
   if (templateStorage.getAll().length === 0) {
@@ -276,6 +545,7 @@ export const initializeMockData = (): void => {
       email: 'admin@example.com',
       password: 'admin123',
       name: 'Admin User',
+      role: 'superadmin',
       dob: '1990-01-01',
       avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
       isVerified: true,
