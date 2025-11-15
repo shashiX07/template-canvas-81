@@ -47,6 +47,7 @@ const Admin = () => {
       email: newUserEmail,
       password: 'password123',
       name: newUserName,
+      role: newUserIsAdmin ? 'admin' : 'user',
       isVerified: false,
       isAdmin: newUserIsAdmin,
       isSuperAdmin: false,

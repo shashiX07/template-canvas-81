@@ -56,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       name,
       email,
       password,
+      role: 'user',
       dob: '',
       phone: '',
       isVerified: false,
