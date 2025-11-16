@@ -12,9 +12,9 @@ import TemplatePreview from "./pages/TemplatePreview";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-import Editor from "./pages/Editor";
-import Admin from "./pages/Admin";
-import AdminTemplateUpload from "./pages/AdminTemplateUpload";
+import EditorPage from "./pages/Editor";
+import AdminPage from "./pages/Admin";
+import AdminTemplateUploadPage from "./pages/AdminTemplateUpload";
 import FreelancerAuth from "./pages/FreelancerAuth";
 import FreelancerDashboard from "./pages/FreelancerDashboard";
 
@@ -34,9 +34,9 @@ const App = () => (
             <Route path="/templates" element={<Templates />} />
             <Route path="/template/:id" element={<TemplateDetail />} />
             <Route path="/template/:id/preview" element={<TemplatePreview />} />
-            <Route path="/editor/:id" element={<ProtectedRoute><Editor /></ProtectedRoute>} />
-            <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
-            <Route path="/admin/upload" element={<ProtectedRoute requireAdmin><AdminTemplateUpload /></ProtectedRoute>} />
+            <Route path="/editor/:id" element={<ProtectedRoute><EditorPage /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminPage /></ProtectedRoute>} />
+            <Route path="/admin/upload" element={<ProtectedRoute requireAdmin><AdminTemplateUploadPage /></ProtectedRoute>} />
             <Route path="/profile/*" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/freelancer/dashboard" element={<ProtectedRoute><FreelancerDashboard /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
