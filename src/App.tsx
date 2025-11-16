@@ -12,6 +12,9 @@ import TemplatePreview from "./pages/TemplatePreview";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Editor from "./pages/Editor";
+import Admin from "./pages/Admin";
+import AdminTemplateUpload from "./pages/AdminTemplateUpload";
 import FreelancerAuth from "./pages/FreelancerAuth";
 import FreelancerDashboard from "./pages/FreelancerDashboard";
 
