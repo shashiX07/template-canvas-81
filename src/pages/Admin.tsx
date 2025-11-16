@@ -8,8 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart3, Users, FileText, Upload, UserPlus, Shield, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import { templateStorage, userStorage, type Template, type User } from "@/lib/storage";
+import { FreelancerManagement } from "@/components/admin/FreelancerManagement";
+import { FreelancerActivity } from "@/components/admin/FreelancerActivity";
 import { toast } from "sonner";
 
 const Admin = () => {
@@ -173,60 +176,78 @@ const Admin = () => {
           </Button>
         </div>
 
-        {/* Templates Management */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Template Management</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {templates.map((template) => (
-                <div key={template.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <img
-                      src={template.thumbnail}
-                      alt={template.title}
-                      className="w-16 h-16 rounded object-cover"
-                    />
-                    <div>
-                      <h4 className="font-semibold">{template.title}</h4>
-                      <p className="text-sm text-muted-foreground">{template.category}</p>
-                      <div className="flex gap-2 mt-1">
-                        <Badge variant={template.isPublic ? "default" : "secondary"}>
-                          {template.isPublic ? "Public" : "Private"}
-                        </Badge>
-                        {template.isPremium && <Badge variant="outline">Premium</Badge>}
+        {/* Freelancer Management Tabs */}
+        <Tabs defaultValue="freelancers" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="freelancers">Freelancers</TabsTrigger>
+            <TabsTrigger value="activity">Activity Log</TabsTrigger>
+            <TabsTrigger value="templates">Templates</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="freelancers" className="mt-6">
+            <FreelancerManagement />
+          </TabsContent>
+          
+          <TabsContent value="activity" className="mt-6">
+            <FreelancerActivity />
+          </TabsContent>
+          
+          <TabsContent value="templates" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Template Management</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {templates.map((template) => (
+                    <div key={template.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-4">
+                        <img
+                          src={template.thumbnail}
+                          alt={template.title}
+                          className="w-16 h-16 rounded object-cover"
+                        />
+                        <div>
+                          <h4 className="font-semibold">{template.title}</h4>
+                          <p className="text-sm text-muted-foreground">{template.category}</p>
+                          <div className="flex gap-2 mt-1">
+                            <Badge variant={template.isPublic ? "default" : "secondary"}>
+                              {template.isPublic ? "Public" : "Private"}
+                            </Badge>
+                            {template.isPremium && <Badge variant="outline">Premium</Badge>}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleToggleTemplateVisibility(template)}
+                        >
+                          {template.isPublic ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditTemplate(template)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteTemplate(template.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleToggleTemplateVisibility(template)}
-                    >
-                      {template.isPublic ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditTemplate(template)}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteTemplate(template.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {/* Users Management */}
         <Card>

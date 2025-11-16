@@ -1,10 +1,11 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -202,111 +203,111 @@ const Editor = () => {
     return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
   };
 
-  // Real-time update handlers - Changes are applied directly to DOM without reloading
-  const updateTextContent = (value: string) => {
+  // Memoized real-time update handlers - Changes are applied directly to DOM without reloading
+  const updateTextContent = useCallback((value: string) => {
     setTextContent(value);
     if (selectedElement) {
       selectedElement.innerText = value;
     }
-  };
+  }, [selectedElement]);
   
-  const updateTextColor = (value: string) => {
+  const updateTextColor = useCallback((value: string) => {
     setTextColor(value);
     if (selectedElement) {
       selectedElement.style.color = value;
     }
-  };
+  }, [selectedElement]);
   
-  const updateBackgroundColor = (value: string) => {
+  const updateBackgroundColor = useCallback((value: string) => {
     setBackgroundColor(value);
     if (selectedElement) {
       selectedElement.style.backgroundColor = value;
     }
-  };
+  }, [selectedElement]);
   
-  const updateFontFamily = (value: string) => {
+  const updateFontFamily = useCallback((value: string) => {
     setFontFamily(value);
     if (selectedElement) {
       selectedElement.style.fontFamily = value;
     }
-  };
+  }, [selectedElement]);
   
-  const updateFontSize = (value: string) => {
+  const updateFontSize = useCallback((value: string) => {
     setFontSize(value);
     if (selectedElement) {
       selectedElement.style.fontSize = `${value}px`;
     }
-  };
+  }, [selectedElement]);
   
-  const updateFontWeight = (value: string) => {
+  const updateFontWeight = useCallback((value: string) => {
     setFontWeight(value);
     if (selectedElement) {
       selectedElement.style.fontWeight = value;
     }
-  };
+  }, [selectedElement]);
   
-  const updateTextAlign = (value: string) => {
+  const updateTextAlign = useCallback((value: string) => {
     setTextAlign(value);
     if (selectedElement) {
       selectedElement.style.textAlign = value;
     }
-  };
+  }, [selectedElement]);
   
-  const updateTextDecoration = (value: string) => {
+  const updateTextDecoration = useCallback((value: string) => {
     setTextDecoration(value);
     if (selectedElement) {
       selectedElement.style.textDecoration = value;
     }
-  };
+  }, [selectedElement]);
   
-  const updateImageWidth = (value: string) => {
+  const updateImageWidth = useCallback((value: string) => {
     setImageWidth(value);
     if (selectedElement && selectedElement.tagName === 'IMG') {
       selectedElement.style.width = value.includes('%') || value.includes('px') ? value : `${value}px`;
     }
-  };
+  }, [selectedElement]);
   
-  const updateImageHeight = (value: string) => {
+  const updateImageHeight = useCallback((value: string) => {
     setImageHeight(value);
     if (selectedElement && selectedElement.tagName === 'IMG') {
       selectedElement.style.height = value === 'auto' ? 'auto' : value.includes('%') || value.includes('px') ? value : `${value}px`;
     }
-  };
+  }, [selectedElement]);
   
-  const updateImageFit = (value: string) => {
+  const updateImageFit = useCallback((value: string) => {
     setImageFit(value);
     if (selectedElement && selectedElement.tagName === 'IMG') {
       (selectedElement as HTMLImageElement).style.objectFit = value as any;
     }
-  };
+  }, [selectedElement]);
   
-  const updateVideoAutoplay = (value: boolean) => {
+  const updateVideoAutoplay = useCallback((value: boolean) => {
     setVideoAutoplay(value);
     if (selectedElement && selectedElement.tagName === 'VIDEO') {
       (selectedElement as HTMLVideoElement).autoplay = value;
     }
-  };
+  }, [selectedElement]);
   
-  const updateVideoMuted = (value: boolean) => {
+  const updateVideoMuted = useCallback((value: boolean) => {
     setVideoMuted(value);
     if (selectedElement && selectedElement.tagName === 'VIDEO') {
       (selectedElement as HTMLVideoElement).muted = value;
     }
-  };
+  }, [selectedElement]);
   
-  const updateVideoLoop = (value: boolean) => {
+  const updateVideoLoop = useCallback((value: boolean) => {
     setVideoLoop(value);
     if (selectedElement && selectedElement.tagName === 'VIDEO') {
       (selectedElement as HTMLVideoElement).loop = value;
     }
-  };
+  }, [selectedElement]);
   
-  const updateVideoControls = (value: boolean) => {
+  const updateVideoControls = useCallback((value: boolean) => {
     setVideoControls(value);
     if (selectedElement && selectedElement.tagName === 'VIDEO') {
       (selectedElement as HTMLVideoElement).controls = value;
     }
-  };
+  }, [selectedElement]);
   
   const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -454,22 +455,25 @@ const Editor = () => {
         </div>
 
         {/* Properties Sidebar */}
-        <div className="w-80 border-l bg-card overflow-y-auto">
-          <div className="p-4 border-b">
+        <div className="w-80 border-l bg-card flex flex-col">
+          <div className="p-4 border-b flex-shrink-0">
             <h3 className="font-semibold text-lg">Properties</h3>
             <p className="text-sm text-muted-foreground mt-1">
               {elementType === 'none' ? 'Click an element to edit' : `Editing ${elementType}`}
             </p>
           </div>
+          
+          <ScrollArea className="flex-1 h-[calc(100vh-8rem)]"  onWheel={(e) => e.stopPropagation()}>
+            <div className="p-4"  onWheel={(e) => e.stopPropagation()}>
 
-          {elementType === 'none' && (
-            <div className="p-4 text-center text-muted-foreground">
-              <p>Select an element in the canvas to see its properties</p>
-            </div>
-          )}
+              {elementType === 'none' && (
+                <div className="text-center text-muted-foreground">
+                  <p>Select an element in the canvas to see its properties</p>
+                </div>
+              )}
 
-          {(elementType === 'text' || elementType === 'container') && (
-            <div className="p-4 space-y-4">
+              {(elementType === 'text' || elementType === 'container') && (
+                <div className="space-y-4">
               <div>
                 <Label>Text Content</Label>
                 <Textarea
@@ -601,11 +605,11 @@ const Editor = () => {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-          )}
+                </div>
+              )}
 
-          {elementType === 'image' && (
-            <div className="p-4 space-y-4">
+              {elementType === 'image' && (
+                <div className="space-y-4">
               <div>
                 <Label>Upload New Image</Label>
                 <Button
@@ -667,8 +671,8 @@ const Editor = () => {
             </div>
           )}
 
-          {elementType === 'video' && (
-            <div className="p-4 space-y-4">
+              {elementType === 'video' && (
+                <div className="space-y-4">
               <div>
                 <Label>Upload New Video</Label>
                 <Button
@@ -721,8 +725,10 @@ const Editor = () => {
                   onCheckedChange={updateVideoControls}
                 />
               </div>
+                </div>
+              )}
             </div>
-          )}
+          </ScrollArea>
         </div>
       </div>
     </div>
