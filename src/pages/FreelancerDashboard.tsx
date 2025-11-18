@@ -18,7 +18,8 @@ import {
   Sparkles,
   Download,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  Code
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { 
@@ -38,6 +39,7 @@ import FreelancerPayouts from '@/components/freelancer/FreelancerPayouts';
 import FreelancerReviews from '@/components/freelancer/FreelancerReviews';
 import FreelancerProfile from '@/components/freelancer/FreelancerProfile';
 import FreelancerSettings from '@/components/freelancer/FreelancerSettings';
+import FreelancerCodeEditor from '@/components/freelancer/FreelancerCodeEditor';
 import { toast } from 'sonner';
 
 export default function FreelancerDashboard() {
@@ -133,7 +135,7 @@ export default function FreelancerDashboard() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid grid-cols-9 w-full max-w-5xl">
+          <TabsList className="grid grid-cols-10 w-full max-w-6xl">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <LayoutDashboard className="w-4 h-4" />
               <span className="hidden md:inline">Overview</span>
@@ -141,6 +143,10 @@ export default function FreelancerDashboard() {
             <TabsTrigger value="templates" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               <span className="hidden md:inline">Templates</span>
+            </TabsTrigger>
+            <TabsTrigger value="code-editor" className="flex items-center gap-2">
+              <Code className="w-4 h-4" />
+              <span className="hidden md:inline">Code Editor</span>
             </TabsTrigger>
             <TabsTrigger value="upload" className="flex items-center gap-2">
               <Upload className="w-4 h-4" />
@@ -178,6 +184,10 @@ export default function FreelancerDashboard() {
 
           <TabsContent value="templates">
             <FreelancerTemplates freelancerId={user.id} />
+          </TabsContent>
+
+          <TabsContent value="code-editor">
+            <FreelancerCodeEditor />
           </TabsContent>
 
           <TabsContent value="upload">
