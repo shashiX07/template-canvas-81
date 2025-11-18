@@ -272,6 +272,8 @@ export default function FreelancerCodeEditor() {
     );
 
     saveProjects(updatedProjects);
+    setCurrentProject(updatedProject);
+    refreshPreview();
     toast.success('File saved successfully');
   };
 
@@ -294,34 +296,55 @@ export default function FreelancerCodeEditor() {
 
     let html = htmlFile.content;
 
-    // Inject CSS files
-    currentProject.files.filter(f => f.type === 'css').forEach(cssFile => {
-      html = html.replace(
-        `href="${cssFile.name}"`,
-        `href="data:text/css;base64,${btoa(cssFile.content)}"`
-      );
-      if (!html.includes(cssFile.name)) {
-        html = html.replace('</head>', `<style>${cssFile.content}</style></head>`);
+    // Ensure we have a valid HTML structure
+    if (!html.includes('<!DOCTYPE')) {
+      html = `<!DOCTYPE html>\n${html}`;
+    }
+    if (!html.includes('<html')) {
+      html = `<html>\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>Preview</title>\n</head>\n<body>\n${html}\n</body>\n</html>`;
+    }
+
+    // Inject CSS files - handle both linked and inline
+    const cssFiles = currentProject.files.filter(f => f.type === 'css');
+    cssFiles.forEach(cssFile => {
+      // Try to replace linked CSS
+      const linkPattern = new RegExp(`<link[^>]*href=["']${cssFile.name}["'][^>]*>`, 'gi');
+      if (linkPattern.test(html)) {
+        html = html.replace(linkPattern, `<style>${cssFile.content}</style>`);
+      } else {
+        // If not linked, inject before </head>
+        if (html.includes('</head>')) {
+          html = html.replace('</head>', `<style>${cssFile.content}</style>\n</head>`);
+        }
       }
     });
 
-    // Inject JS files
-    currentProject.files.filter(f => f.type === 'js').forEach(jsFile => {
-      html = html.replace(
-        `src="${jsFile.name}"`,
-        `src="data:text/javascript;base64,${btoa(jsFile.content)}"`
-      );
-      if (!html.includes(jsFile.name)) {
-        html = html.replace('</body>', `<script>${jsFile.content}</script></body>`);
+    // Inject JS files - handle both linked and inline
+    const jsFiles = currentProject.files.filter(f => f.type === 'js');
+    jsFiles.forEach(jsFile => {
+      // Try to replace linked JS
+      const scriptPattern = new RegExp(`<script[^>]*src=["']${jsFile.name}["'][^>]*></script>`, 'gi');
+      if (scriptPattern.test(html)) {
+        html = html.replace(scriptPattern, `<script>${jsFile.content}</script>`);
+      } else {
+        // If not linked, inject before </body>
+        if (html.includes('</body>')) {
+          html = html.replace('</body>', `<script>${jsFile.content}</script>\n</body>`);
+        }
       }
     });
 
     // Replace image sources with base64 data URLs
-    currentProject.files.filter(f => f.type === 'image').forEach(imageFile => {
-      html = html.replace(
-        new RegExp(`src=["']${imageFile.name}["']`, 'g'),
-        `src="${imageFile.content}"`
-      );
+    const imageFiles = currentProject.files.filter(f => f.type === 'image');
+    imageFiles.forEach(imageFile => {
+      const patterns = [
+        new RegExp(`src=["']${imageFile.name}["']`, 'gi'),
+        new RegExp(`src=["']./${imageFile.name}["']`, 'gi'),
+        new RegExp(`src=["']/${imageFile.name}["']`, 'gi'),
+      ];
+      patterns.forEach(pattern => {
+        html = html.replace(pattern, `src="${imageFile.content}"`);
+      });
     });
 
     return html;
