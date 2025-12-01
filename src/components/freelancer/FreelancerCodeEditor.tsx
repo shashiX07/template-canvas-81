@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Editor from '@monaco-editor/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { 
   File, 
   Folder, 
@@ -17,7 +18,13 @@ import {
   FileText,
   Image as ImageIcon,
   Download,
-  RefreshCw
+  RefreshCw,
+  Undo,
+  Redo,
+  Monitor,
+  Tablet,
+  Smartphone,
+  Keyboard
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -52,6 +59,9 @@ interface CodeProject {
 }
 
 const STORAGE_KEY = 'freelancer_code_projects';
+const AUTO_SAVE_DELAY = 2000; // 2 seconds
+
+type PreviewMode = 'desktop' | 'tablet' | 'mobile';
 
 export default function FreelancerCodeEditor() {
   const [projects, setProjects] = useState<CodeProject[]>([]);
@@ -62,10 +72,63 @@ export default function FreelancerCodeEditor() {
   const [showNewFileDialog, setShowNewFileDialog] = useState(false);
   const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
   const [previewKey, setPreviewKey] = useState(0);
+  const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop');
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  
+  // Undo/Redo functionality
+  const [history, setHistory] = useState<Array<{ file: string; content: string }>>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [unsavedChanges, setUnsavedChanges] = useState(false);
+  
+  // Auto-save timer
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     loadProjects();
-  }, []);
+    
+    // Keyboard shortcuts
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        saveCurrentFile();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        handleRedo();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        e.preventDefault();
+        setShowShortcuts(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentFile, history, historyIndex]);
+
+  // Auto-save effect
+  useEffect(() => {
+    if (unsavedChanges && currentFile) {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+      
+      autoSaveTimerRef.current = setTimeout(() => {
+        saveCurrentFile(true);
+        setUnsavedChanges(false);
+      }, AUTO_SAVE_DELAY);
+    }
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [unsavedChanges, currentFile]);
 
   const loadProjects = () => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -256,7 +319,7 @@ export default function FreelancerCodeEditor() {
     e.target.value = '';
   };
 
-  const saveCurrentFile = () => {
+  const saveCurrentFile = (isAutoSave = false) => {
     if (!currentProject || !currentFile) return;
 
     const updatedProject = {
@@ -274,11 +337,46 @@ export default function FreelancerCodeEditor() {
     saveProjects(updatedProjects);
     setCurrentProject(updatedProject);
     refreshPreview();
-    toast.success('File saved successfully');
+    
+    if (!isAutoSave) {
+      toast.success('File saved successfully');
+    }
+    setUnsavedChanges(false);
+  };
+
+  const handleUndo = () => {
+    if (historyIndex > 0 && currentFile) {
+      const prevState = history[historyIndex - 1];
+      if (prevState.file === currentFile.name) {
+        setCurrentFile({ ...currentFile, content: prevState.content });
+        setHistoryIndex(historyIndex - 1);
+        toast.success('Undo');
+      }
+    }
+  };
+
+  const handleRedo = () => {
+    if (historyIndex < history.length - 1 && currentFile) {
+      const nextState = history[historyIndex + 1];
+      if (nextState.file === currentFile.name) {
+        setCurrentFile({ ...currentFile, content: nextState.content });
+        setHistoryIndex(historyIndex + 1);
+        toast.success('Redo');
+      }
+    }
   };
 
   const handleEditorChange = (value: string | undefined) => {
     if (currentFile && value !== undefined) {
+      // Add to history for undo/redo
+      if (value !== currentFile.content) {
+        const newHistory = history.slice(0, historyIndex + 1);
+        newHistory.push({ file: currentFile.name, content: value });
+        setHistory(newHistory);
+        setHistoryIndex(newHistory.length - 1);
+        setUnsavedChanges(true);
+      }
+      
       setCurrentFile({ ...currentFile, content: value });
     }
   };
@@ -387,6 +485,14 @@ export default function FreelancerCodeEditor() {
       case 'js': return 'javascript';
       case 'json': return 'json';
       default: return 'plaintext';
+    }
+  };
+
+  const getPreviewWidth = () => {
+    switch (previewMode) {
+      case 'desktop': return '100%';
+      case 'tablet': return '768px';
+      case 'mobile': return '375px';
     }
   };
 
@@ -509,17 +615,45 @@ export default function FreelancerCodeEditor() {
           <Card className="h-full rounded-none border-0 border-r">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm truncate">
+                <CardTitle className="text-sm truncate flex items-center gap-2">
                   {currentFile ? currentFile.name : 'No file selected'}
+                  {unsavedChanges && <Badge variant="secondary" className="text-xs">Unsaved</Badge>}
                 </CardTitle>
                 <div className="flex gap-1">
                   <Button 
                     size="sm" 
                     variant="ghost"
-                    onClick={saveCurrentFile}
+                    onClick={handleUndo}
+                    disabled={historyIndex <= 0}
+                    title="Undo (Ctrl+Z)"
+                  >
+                    <Undo className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="ghost"
+                    onClick={handleRedo}
+                    disabled={historyIndex >= history.length - 1}
+                    title="Redo (Ctrl+Y)"
+                  >
+                    <Redo className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="ghost"
+                    onClick={() => saveCurrentFile()}
                     disabled={!currentFile}
+                    title="Save (Ctrl+S)"
                   >
                     <Save className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="ghost"
+                    onClick={() => setShowShortcuts(!showShortcuts)}
+                    title="Keyboard Shortcuts (Ctrl+/)"
+                  >
+                    <Keyboard className="w-4 h-4" />
                   </Button>
                   <Button 
                     size="sm" 
@@ -574,24 +708,55 @@ export default function FreelancerCodeEditor() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm">Live Preview</CardTitle>
-                <Button 
-                  size="sm" 
-                  variant="ghost"
-                  onClick={refreshPreview}
-                >
-                  <RefreshCw className="w-4 h-4" />
-                </Button>
+                <div className="flex gap-1">
+                  <Button 
+                    size="sm" 
+                    variant={previewMode === 'desktop' ? 'default' : 'ghost'}
+                    onClick={() => setPreviewMode('desktop')}
+                    title="Desktop View"
+                  >
+                    <Monitor className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant={previewMode === 'tablet' ? 'default' : 'ghost'}
+                    onClick={() => setPreviewMode('tablet')}
+                    title="Tablet View"
+                  >
+                    <Tablet className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant={previewMode === 'mobile' ? 'default' : 'ghost'}
+                    onClick={() => setPreviewMode('mobile')}
+                    title="Mobile View"
+                  >
+                    <Smartphone className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="ghost"
+                    onClick={refreshPreview}
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
-            <CardContent className="p-0 h-[calc(100%-4rem)]">
+            <CardContent className="p-0 h-[calc(100%-4rem)] flex items-center justify-center bg-muted/20">
               {currentProject ? (
-                <iframe
-                  key={previewKey}
-                  srcDoc={getPreviewHTML()}
-                  className="w-full h-full border-0"
-                  sandbox="allow-scripts"
-                  title="Preview"
-                />
+                <div 
+                  className="transition-all duration-300 h-full flex items-center justify-center"
+                  style={{ width: getPreviewWidth() }}
+                >
+                  <iframe
+                    key={previewKey}
+                    srcDoc={getPreviewHTML()}
+                    className="w-full h-full border-0 bg-background"
+                    sandbox="allow-scripts"
+                    title="Preview"
+                  />
+                </div>
               ) : (
                 <div className="flex items-center justify-center h-full text-muted-foreground">
                   Create a project to see preview
@@ -642,6 +807,39 @@ export default function FreelancerCodeEditor() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={createNewFile}>Create</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Keyboard Shortcuts Dialog */}
+      <AlertDialog open={showShortcuts} onOpenChange={setShowShortcuts}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Keyboard Shortcuts</AlertDialogTitle>
+            <AlertDialogDescription>
+              Use these shortcuts to work more efficiently
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3 py-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Save File</span>
+              <Badge variant="secondary">Ctrl + S</Badge>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Undo</span>
+              <Badge variant="secondary">Ctrl + Z</Badge>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Redo</span>
+              <Badge variant="secondary">Ctrl + Y</Badge>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Toggle Shortcuts</span>
+              <Badge variant="secondary">Ctrl + /</Badge>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogAction>Got it</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
