@@ -7,13 +7,18 @@ import {
   TrendingUp, Award, Rocket, ChevronRight
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { initializeMockData } from "@/lib/storage";
+import { motion, useScroll, useTransform, useInView } from "framer-motion";
 
 const Index = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
+  const heroRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll();
+  const y = useTransform(scrollYProgress, [0, 1], ['0%', '50%']);
+  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
   useEffect(() => {
     initializeMockData();
@@ -119,29 +124,59 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-hero">
-        <div className="absolute inset-0 bg-grid-pattern opacity-5" />
+      <section className="relative overflow-hidden bg-gradient-hero" ref={heroRef}>
+        <motion.div 
+          className="absolute inset-0 bg-grid-pattern opacity-5" 
+          style={{ y }}
+        />
         <div className="container mx-auto px-4 pt-24 pb-32 relative">
-          <div className="text-center max-w-5xl mx-auto animate-fade-in">
-            <Badge variant="secondary" className="mb-6 px-4 py-2 text-sm font-medium">
-              <Sparkles className="w-3.5 h-3.5 mr-2" />
-              Trusted by 10,000+ users worldwide
-            </Badge>
+          <motion.div 
+            className="text-center max-w-5xl mx-auto"
+            style={{ opacity }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+            >
+              <Badge variant="secondary" className="mb-6 px-4 py-2 text-sm font-medium">
+                <Sparkles className="w-3.5 h-3.5 mr-2" />
+                Trusted by 10,000+ users worldwide
+              </Badge>
+            </motion.div>
             
-            <h1 className="text-6xl md:text-8xl font-bold mb-8 leading-tight">
+            <motion.h1 
+              className="text-6xl md:text-8xl font-bold mb-8 leading-tight"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.8 }}
+            >
               <span className="bg-gradient-primary bg-clip-text text-transparent">
                 Turn Moments Into
               </span>
               <br />
               <span className="text-foreground">Memories That Last</span>
-            </h1>
+            </motion.h1>
             
-            <p className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed">
+            <motion.p 
+              className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.8 }}
+            >
               Create stunning, personalized pages for life's most important occasions. 
               No design experience needed—just your vision and our powerful visual editor.
-            </p>
+            </motion.p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+            <motion.div 
+              className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7, duration: 0.5 }}
+            >
               <Button 
                 size="lg" 
                 className="text-lg px-10 h-14 shadow-elegant hover:shadow-glow transition-all group"
@@ -170,10 +205,15 @@ const Index = () => {
                   Sign In
                 </Button>
               )}
-            </div>
+            </motion.div>
 
             {/* Trust Indicators */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-3xl mx-auto pt-8 border-t border-border/40">
+            <motion.div 
+              className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-3xl mx-auto pt-8 border-t border-border/40"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.9, duration: 0.8 }}
+            >
               <div className="text-center">
                 <div className="text-3xl font-bold text-foreground mb-1">500+</div>
                 <div className="text-sm text-muted-foreground">Templates</div>
@@ -190,13 +230,13 @@ const Index = () => {
                 <div className="text-3xl font-bold text-foreground mb-1">4.9/5</div>
                 <div className="text-sm text-muted-foreground">User Rating</div>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
       {/* How It Works Section */}
-      <section className="container mx-auto px-4 py-24">
+      <SectionWithAnimation>
         <div className="text-center mb-16">
           <Badge variant="outline" className="mb-4">Simple Process</Badge>
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
@@ -207,11 +247,17 @@ const Index = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+        <motion.div 
+          className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+        >
           {steps.map((step, index) => {
             const StepIcon = stepIcons[index];
             return (
-              <div key={index} className="relative group">
+              <motion.div key={index} className="relative group" variants={itemVariants}>
                 <Card className="p-8 h-full hover:shadow-elegant transition-all border-2 hover:border-primary/20">
                   <div className="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground font-bold shadow-glow">
                     {step.number}
@@ -225,14 +271,14 @@ const Index = () => {
                 {index < steps.length - 1 && (
                   <ChevronRight className="hidden lg:block absolute top-1/2 -right-4 transform -translate-y-1/2 text-muted-foreground/30 w-8 h-8" />
                 )}
-              </div>
+              </motion.div>
             );
           })}
-        </div>
-      </section>
+        </motion.div>
+      </SectionWithAnimation>
 
       {/* Occasions Section */}
-      <section className="container mx-auto px-4 py-24 bg-muted/30">
+      <SectionWithAnimation className="bg-muted/30">
         <div className="text-center mb-16">
           <Badge variant="outline" className="mb-4">For Every Moment</Badge>
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
@@ -243,11 +289,18 @@ const Index = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+        <motion.div 
+          className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+        >
           {occasions.map((occasion, index) => {
             const OccasionIcon = occasionIcons[index];
             return (
-              <Card 
+              <motion.div key={index} variants={itemVariants}>
+                <Card
                 key={index}
                 className="p-8 hover:shadow-elegant transition-all cursor-pointer group border-2 hover:border-primary/20 relative overflow-hidden"
                 onClick={() => navigate(`/templates?category=${occasion.title}`)}
@@ -265,13 +318,14 @@ const Index = () => {
                   </div>
                 </div>
               </Card>
+              </motion.div>
             );
           })}
-        </div>
-      </section>
+        </motion.div>
+      </SectionWithAnimation>
 
       {/* Features Section */}
-      <section className="container mx-auto px-4 py-24">
+      <SectionWithAnimation>
         <div className="text-center mb-16">
           <Badge variant="outline" className="mb-4">Powerful Features</Badge>
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
@@ -282,21 +336,27 @@ const Index = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+        <motion.div 
+          className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+        >
           {features.map((feature, index) => (
-            <div key={index} className="text-center group">
+            <motion.div key={index} className="text-center group" variants={itemVariants}>
               <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-primary text-primary-foreground mb-6 group-hover:scale-110 transition-transform shadow-elegant">
                 <feature.icon className="w-10 h-10" />
               </div>
               <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
               <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
-            </div>
+            </motion.div>
           ))}
-        </div>
-      </section>
+        </motion.div>
+      </SectionWithAnimation>
 
       {/* Testimonials Section */}
-      <section className="container mx-auto px-4 py-24 bg-muted/30">
+      <SectionWithAnimation className="bg-muted/30">
         <div className="text-center mb-16">
           <Badge variant="outline" className="mb-4">Success Stories</Badge>
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
@@ -307,9 +367,16 @@ const Index = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <motion.div 
+          className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+        >
           {testimonials.map((testimonial, index) => (
-            <Card key={index} className="p-8 hover:shadow-elegant transition-all">
+            <motion.div key={index} variants={itemVariants}>
+              <Card className="p-8 hover:shadow-elegant transition-all">
               <CardContent className="p-0">
                 <div className="flex gap-1 mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
@@ -323,13 +390,20 @@ const Index = () => {
                 </div>
               </CardContent>
             </Card>
+            </motion.div>
           ))}
-        </div>
-      </section>
+        </motion.div>
+      </SectionWithAnimation>
 
       {/* Stats Section */}
-      <section className="container mx-auto px-4 py-24">
-        <Card className="p-12 bg-gradient-primary text-primary-foreground shadow-glow">
+      <SectionWithAnimation>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <Card className="p-12 bg-gradient-primary text-primary-foreground shadow-glow">
           <div className="grid md:grid-cols-3 gap-12 text-center">
             <div>
               <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-90" />
@@ -348,11 +422,18 @@ const Index = () => {
             </div>
           </div>
         </Card>
-      </section>
+        </motion.div>
+      </SectionWithAnimation>
 
       {/* Final CTA Section */}
-      <section className="container mx-auto px-4 py-24 text-center">
-        <div className="max-w-4xl mx-auto">
+      <SectionWithAnimation className="text-center">
+        <motion.div 
+          className="max-w-4xl mx-auto"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+        >
           <Badge variant="outline" className="mb-6">Ready to Begin?</Badge>
           <h2 className="text-4xl md:text-6xl font-bold mb-6">
             Start Creating <span className="bg-gradient-primary bg-clip-text text-transparent">Unforgettable Moments</span>
@@ -395,9 +476,50 @@ const Index = () => {
               <span>Cancel anytime</span>
             </div>
           </div>
-        </div>
-      </section>
+        </motion.div>
+      </SectionWithAnimation>
     </div>
+  );
+};
+
+// Animation variants for stagger effect
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5
+    }
+  }
+};
+
+// Reusable section component with intersection observer
+const SectionWithAnimation = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+
+  return (
+    <motion.section
+      ref={ref}
+      className={`container mx-auto px-4 py-24 ${className}`}
+      initial={{ opacity: 0 }}
+      animate={isInView ? { opacity: 1 } : { opacity: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      {children}
+    </motion.section>
   );
 };
 
