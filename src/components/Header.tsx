@@ -31,6 +31,9 @@ export function Header() {
           <Button variant="ghost" onClick={() => navigate('/templates')}>
             Templates
           </Button>
+          <Button variant="ghost" onClick={() => navigate('/webies')}>
+            Webies
+          </Button>
 
           {isAuthenticated ? (
             <DropdownMenu>

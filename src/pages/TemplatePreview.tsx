@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { templateStorage, type Template } from "@/lib/storage";
@@ -9,6 +9,7 @@ const TemplatePreview = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [template, setTemplate] = useState<Template | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     if (id) {
@@ -21,6 +22,55 @@ const TemplatePreview = () => {
       }
     }
   }, [id, navigate]);
+
+  useEffect(() => {
+    if (template && iframeRef.current) {
+      const iframe = iframeRef.current;
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      
+      if (doc) {
+        doc.open();
+        let html = template.htmlContent;
+        
+        // Inject CSS files
+        if (template.cssFiles) {
+          const cssInjects = Object.values(template.cssFiles)
+            .map(content => `<style>${content}</style>`)
+            .join('\n');
+          html = html.replace('</head>', `${cssInjects}\n</head>`);
+        }
+        
+        // Inject JS files
+        if (template.jsFiles) {
+          const jsInjects = Object.values(template.jsFiles)
+            .map(content => `<script>${content}</script>`)
+            .join('\n');
+          html = html.replace('</body>', `${jsInjects}\n</body>`);
+        }
+        
+        // Replace asset paths with base64 data
+        if (template.assets) {
+          Object.entries(template.assets).forEach(([filename, dataUrl]) => {
+            const patterns = [
+              new RegExp(`src=["'].*?${filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`, 'gi'),
+              new RegExp(`href=["'].*?${filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`, 'gi'),
+              new RegExp(`url\\(['"]?.*?${filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"]?\\)`, 'gi'),
+            ];
+            patterns.forEach(pattern => {
+              html = html.replace(pattern, (match) => {
+                if (match.toLowerCase().includes('src=')) return `src="${dataUrl}"`;
+                if (match.toLowerCase().includes('href=')) return `href="${dataUrl}"`;
+                return `url('${dataUrl}')`;
+              });
+            });
+          });
+        }
+        
+        doc.write(html);
+        doc.close();
+      }
+    }
+  }, [template]);
 
   if (!template) {
     return (
@@ -58,10 +108,10 @@ const TemplatePreview = () => {
       {/* Preview */}
       <div className="flex-1">
         <iframe
-          srcDoc={template.htmlContent}
+          ref={iframeRef}
           className="w-full h-full border-0"
           title="Template Preview"
-          sandbox="allow-same-origin"
+          sandbox="allow-same-origin allow-scripts"
         />
       </div>
     </div>

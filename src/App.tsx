@@ -17,6 +17,9 @@ import AdminPage from "./pages/Admin";
 import AdminTemplateUploadPage from "./pages/AdminTemplateUpload";
 import FreelancerAuth from "./pages/FreelancerAuth";
 import FreelancerDashboard from "./pages/FreelancerDashboard";
+import Webies from "./pages/Webies";
+import WebieDetail from "./pages/WebieDetail";
+import CreateWebie from "./pages/CreateWebie";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +42,9 @@ const App = () => (
             <Route path="/admin/upload" element={<ProtectedRoute requireAdmin><AdminTemplateUploadPage /></ProtectedRoute>} />
             <Route path="/profile/*" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/freelancer/dashboard" element={<ProtectedRoute><FreelancerDashboard /></ProtectedRoute>} />
+            <Route path="/webies" element={<Webies />} />
+            <Route path="/webie/:id" element={<WebieDetail />} />
+            <Route path="/webie/create" element={<ProtectedRoute><CreateWebie /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
