@@ -38,10 +38,9 @@ const App = () => (
             <Route path="/template/:id" element={<TemplateDetail />} />
             <Route path="/template/:id/preview" element={<TemplatePreview />} />
             <Route path="/editor/:id" element={<ProtectedRoute><EditorPage /></ProtectedRoute>} />
-            <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminPage /></ProtectedRoute>} />
-            <Route path="/admin/upload" element={<ProtectedRoute requireAdmin><AdminTemplateUploadPage /></ProtectedRoute>} />
+            <Route path="/admin/*" element={<ProtectedRoute requireAdmin><AdminPage /></ProtectedRoute>} />
             <Route path="/profile/*" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/freelancer/dashboard" element={<ProtectedRoute><FreelancerDashboard /></ProtectedRoute>} />
+            <Route path="/freelancer/dashboard/*" element={<ProtectedRoute><FreelancerDashboard /></ProtectedRoute>} />
             <Route path="/webies" element={<Webies />} />
             <Route path="/webie/:id" element={<WebieDetail />} />
             <Route path="/webie/create" element={<ProtectedRoute><CreateWebie /></ProtectedRoute>} />

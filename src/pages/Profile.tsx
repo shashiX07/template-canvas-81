@@ -7,7 +7,7 @@ const Profile = () => {
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <ProfileSidebar />
-        <main className="flex-1 bg-background">
+        <main className="flex-1 bg-background overflow-auto">
           <ProfileContent />
         </main>
       </div>
