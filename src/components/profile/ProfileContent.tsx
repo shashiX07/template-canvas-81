@@ -1,11 +1,9 @@
 import { Routes, Route } from "react-router-dom";
-import { ProfileDashboard } from "./ProfileDashboard";
-import { ProfileDetails } from "./ProfileDetails";
-import { ProfileTemplates } from "./ProfileTemplates";
-import { ProfileSettings } from "./ProfileSettings";
-import { ProfileSecurity } from "./ProfileSecurity";
 import ProfileHome from "./ProfileHome";
 import ProfileExplore from "./ProfileExplore";
+import { ProfileDetails } from "./ProfileDetails";
+import { ProfileSettings } from "./ProfileSettings";
+import UserProfile from "./UserProfile";
 
 export function ProfileContent() {
   return (
@@ -14,9 +12,8 @@ export function ProfileContent() {
         <Route path="/" element={<ProfileHome />} />
         <Route path="/explore" element={<ProfileExplore />} />
         <Route path="/details" element={<ProfileDetails />} />
-        <Route path="/templates" element={<ProfileTemplates />} />
-        <Route path="/settings" element={<ProfileSettings />} />
-        <Route path="/security" element={<ProfileSecurity />} />
+        <Route path="/settings/*" element={<ProfileSettings />} />
+        <Route path="/user/:userId" element={<UserProfile />} />
       </Routes>
     </div>
   );
