@@ -33,9 +33,11 @@ import {
   Reply,
   ChevronDown,
   ChevronUp,
+  Bookmark,
 } from "lucide-react";
 import { webieStorage, type Webie, type WebieComment, type WebieReply } from "@/lib/webieStorage";
 import { userStorage } from "@/lib/storage";
+import { savedWebieStorage } from "@/lib/followStorage";
 import { toast } from "sonner";
 
 const WebieDetail = () => {
@@ -48,6 +50,7 @@ const WebieDetail = () => {
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showFullPreview, setShowFullPreview] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const commentsRef = useRef<HTMLDivElement>(null);
   const currentUser = userStorage.getCurrentUser();
@@ -58,12 +61,15 @@ const WebieDetail = () => {
       if (found) {
         setWebie(found);
         webieStorage.incrementViews(id);
+        if (currentUser) {
+          setIsSaved(savedWebieStorage.isSaved(currentUser.id, id));
+        }
       } else {
         toast.error("Webie not found");
         navigate("/webies");
       }
     }
-  }, [id, navigate]);
+  }, [id, navigate, currentUser]);
 
   useEffect(() => {
     if (webie && iframeRef.current) {
@@ -128,7 +134,25 @@ const WebieDetail = () => {
     }
   };
 
-  const handleCommentLike = (commentId: string) => {
+  const handleSave = () => {
+    if (!currentUser) {
+      toast.error("Please login to save");
+      navigate("/auth");
+      return;
+    }
+    if (webie) {
+      if (isSaved) {
+        savedWebieStorage.unsave(currentUser.id, webie.id);
+        setIsSaved(false);
+        toast.success("Removed from saved");
+      } else {
+        savedWebieStorage.save(currentUser.id, webie.id);
+        setIsSaved(true);
+        toast.success("Saved!");
+      }
+    }
+  };
+
     if (!currentUser) {
       toast.error("Please login to like");
       return;
@@ -313,6 +337,13 @@ const WebieDetail = () => {
                     </Button>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button
+                      variant={isSaved ? "default" : "outline"}
+                      size="icon"
+                      onClick={handleSave}
+                    >
+                      <Bookmark className={`w-4 h-4 ${isSaved ? "fill-current" : ""}`} />
+                    </Button>
                     <span className="text-sm text-muted-foreground flex items-center gap-1">
                       <Eye className="w-4 h-4" />
                       {formatNumber(webie.views)} views
@@ -519,18 +550,30 @@ const WebieDetail = () => {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center gap-4 mb-4">
-                  <Avatar className="h-14 w-14">
+                  <Avatar 
+                    className="h-14 w-14 cursor-pointer"
+                    onClick={() => navigate(`/profile/user/${webie.userId}`)}
+                  >
                     <AvatarImage src={webie.userAvatar} />
                     <AvatarFallback>{webie.userName.charAt(0).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <h4 className="font-semibold">{webie.userName}</h4>
+                    <h4 
+                      className="font-semibold cursor-pointer hover:text-primary"
+                      onClick={() => navigate(`/profile/user/${webie.userId}`)}
+                    >
+                      {webie.userName}
+                    </h4>
                     <p className="text-sm text-muted-foreground">
                       {timeAgo(webie.createdAt)}
                     </p>
                   </div>
                 </div>
-                <Button variant="outline" className="w-full">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => navigate(`/profile/user/${webie.userId}`)}
+                >
                   View Profile
                 </Button>
               </CardContent>
