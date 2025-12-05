@@ -9,9 +9,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Save, Download, ArrowLeft, Upload } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Save, Download, ArrowLeft, Upload, Settings, Plus } from "lucide-react";
 import { templateStorage, customizedTemplateStorage, userStorage, type Template, type CustomizedTemplate } from "@/lib/storage";
 import { toast } from "sonner";
+import { DraggableElements } from "@/components/editor/DraggableElements";
 
 type ElementType = 'text' | 'image' | 'video' | 'container' | 'none';
 
@@ -106,6 +108,32 @@ const Editor = () => {
         
         iframeDoc.write(completeHtml);
         iframeDoc.close();
+
+        // Add drag-drop support
+        iframeDoc.body.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer!.dropEffect = 'copy';
+        });
+
+        iframeDoc.body.addEventListener('drop', (e) => {
+          e.preventDefault();
+          const html = e.dataTransfer?.getData('text/html');
+          if (html) {
+            const wrapper = iframeDoc.createElement('div');
+            wrapper.innerHTML = html;
+            const element = wrapper.firstElementChild;
+            if (element) {
+              // Find target element under cursor
+              const target = iframeDoc.elementFromPoint(e.clientX, e.clientY);
+              if (target && target !== iframeDoc.body) {
+                target.parentElement?.insertBefore(element, target.nextSibling);
+              } else {
+                iframeDoc.body.appendChild(element);
+              }
+              toast.success("Element added to template");
+            }
+          }
+        });
 
         // Make elements clickable with better highlighting
         const allElements = iframeDoc.body.querySelectorAll('*');
@@ -456,21 +484,52 @@ const Editor = () => {
 
         {/* Properties Sidebar */}
         <div className="w-80 border-l bg-card flex flex-col">
-          <div className="p-4 border-b flex-shrink-0">
-            <h3 className="font-semibold text-lg">Properties</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {elementType === 'none' ? 'Click an element to edit' : `Editing ${elementType}`}
-            </p>
-          </div>
-          
-          <ScrollArea className="flex-1 h-[calc(100vh-8rem)]"  onWheel={(e) => e.stopPropagation()}>
-            <div className="p-4"  onWheel={(e) => e.stopPropagation()}>
+          <Tabs defaultValue="properties" className="flex-1 flex flex-col">
+            <div className="p-3 border-b flex-shrink-0">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="properties" className="gap-1.5 text-xs">
+                  <Settings className="w-3.5 h-3.5" />
+                  Properties
+                </TabsTrigger>
+                <TabsTrigger value="elements" className="gap-1.5 text-xs">
+                  <Plus className="w-3.5 h-3.5" />
+                  Elements
+                </TabsTrigger>
+              </TabsList>
+            </div>
+            
+            <TabsContent value="elements" className="flex-1 m-0 p-4 overflow-auto">
+              <DraggableElements 
+                onElementDrop={(html) => {
+                  if (iframeRef.current?.contentDocument) {
+                    const doc = iframeRef.current.contentDocument;
+                    const wrapper = doc.createElement('div');
+                    wrapper.innerHTML = html;
+                    const element = wrapper.firstElementChild;
+                    if (element) {
+                      doc.body.appendChild(element);
+                      toast.success("Element added to template");
+                    }
+                  }
+                }}
+              />
+            </TabsContent>
 
-              {elementType === 'none' && (
-                <div className="text-center text-muted-foreground">
-                  <p>Select an element in the canvas to see its properties</p>
-                </div>
-              )}
+            <TabsContent value="properties" className="flex-1 m-0 overflow-hidden">
+              <div className="p-3 border-b">
+                <p className="text-sm text-muted-foreground">
+                  {elementType === 'none' ? 'Click an element to edit' : `Editing ${elementType}`}
+                </p>
+              </div>
+              
+              <ScrollArea className="h-[calc(100vh-12rem)]" onWheel={(e) => e.stopPropagation()}>
+                <div className="p-4" onWheel={(e) => e.stopPropagation()}>
+
+                  {elementType === 'none' && (
+                    <div className="text-center text-muted-foreground py-8">
+                      <p>Select an element in the canvas to see its properties</p>
+                    </div>
+                  )}
 
               {(elementType === 'text' || elementType === 'container') && (
                 <div className="space-y-4">
@@ -727,8 +786,10 @@ const Editor = () => {
               </div>
                 </div>
               )}
-            </div>
-          </ScrollArea>
+                </div>
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

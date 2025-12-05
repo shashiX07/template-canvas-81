@@ -1,4 +1,4 @@
-import { Home, Compass, User, Settings, LogOut, Sparkles, PanelLeftClose, PanelLeft } from "lucide-react";
+import { Home, Compass, User, Settings, LogOut, Sparkles, PanelLeftClose, PanelLeft, MessageCircle } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -14,10 +14,15 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { userStorage } from "@/lib/storage";
+import { chatStorage } from "@/lib/chatStorage";
+import { useState, useEffect } from "react";
 
 const menuItems = [
   { title: "Home", url: "/profile", icon: Home, end: true },
   { title: "Explore", url: "/profile/explore", icon: Compass },
+  { title: "Messages", url: "/profile/messages", icon: MessageCircle, hasBadge: true },
   { title: "Profile", url: "/profile/details", icon: User },
   { title: "Settings", url: "/profile/settings", icon: Settings },
 ];
@@ -27,6 +32,22 @@ export function ProfileSidebar() {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const isCollapsed = state === "collapsed";
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const checkUnread = () => {
+      const currentUser = userStorage.getCurrentUser();
+      if (currentUser) {
+        const count = chatStorage.getUnreadCount(currentUser.id);
+        setUnreadCount(count);
+      }
+    };
+
+    checkUnread();
+    const interval = setInterval(checkUnread, 5000); // Check every 5 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <Sidebar collapsible="icon" className="border-r">
@@ -78,7 +99,16 @@ export function ProfileSidebar() {
                       )}
                       activeClassName="bg-muted text-primary font-medium"
                     >
-                      <item.icon className="h-5 w-5 shrink-0" />
+                      <div className="relative">
+                        <item.icon className="h-5 w-5 shrink-0" />
+                        {item.hasBadge && unreadCount > 0 && (
+                          <Badge 
+                            className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center text-[10px]"
+                          >
+                            {unreadCount > 9 ? "9+" : unreadCount}
+                          </Badge>
+                        )}
+                      </div>
                       {!isCollapsed && <span className="text-sm">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
