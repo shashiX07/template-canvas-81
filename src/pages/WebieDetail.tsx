@@ -153,6 +153,7 @@ const WebieDetail = () => {
     }
   };
 
+  const handleCommentLike = (commentId: string) => {
     if (!currentUser) {
       toast.error("Please login to like");
       return;
