@@ -4,7 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { 
   Search, 
   Send, 
@@ -15,11 +28,27 @@ import {
   Info,
   Check,
   CheckCheck,
-  Circle
+  Circle,
+  Paperclip,
+  Image as ImageIcon,
+  File,
+  Mic,
+  Smile,
+  Reply,
+  Trash2,
+  Edit3,
+  Pin,
+  Copy,
+  Download,
+  X,
+  GripVertical
 } from "lucide-react";
 import { userStorage, type User } from "@/lib/storage";
-import { chatStorage, type ChatMessage, type Conversation } from "@/lib/chatStorage";
+import { chatStorage, type ChatMessage, type Conversation, type MessageAttachment } from "@/lib/chatStorage";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+const EMOJI_LIST = ["❤️", "👍", "😂", "😮", "😢", "🙏", "🔥", "👏"];
 
 const ProfileMessages = () => {
   const currentUser = userStorage.getCurrentUser();
@@ -30,7 +59,18 @@ const ProfileMessages = () => {
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showUserList, setShowUserList] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
+  const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
+  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+  const [searchMessagesQuery, setSearchMessagesQuery] = useState("");
+  const [showSearchMessages, setShowSearchMessages] = useState(false);
+  const [pinnedMessages, setPinnedMessages] = useState<ChatMessage[]>([]);
+  const [showPinnedMessages, setShowPinnedMessages] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (currentUser) {
@@ -43,6 +83,7 @@ const ProfileMessages = () => {
     if (selectedUser && currentUser) {
       loadMessages();
       chatStorage.markAsRead(currentUser.id, selectedUser.id);
+      loadPinnedMessages();
     }
   }, [selectedUser, currentUser]);
 
@@ -69,6 +110,13 @@ const ProfileMessages = () => {
     }
   };
 
+  const loadPinnedMessages = () => {
+    if (currentUser && selectedUser) {
+      const pinned = chatStorage.getPinnedMessages(currentUser.id, selectedUser.id);
+      setPinnedMessages(pinned);
+    }
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -76,8 +124,16 @@ const ProfileMessages = () => {
   const handleSend = () => {
     if (!newMessage.trim() || !currentUser || !selectedUser) return;
 
-    chatStorage.sendMessage(currentUser.id, selectedUser.id, newMessage.trim());
+    chatStorage.sendMessage(
+      currentUser.id, 
+      selectedUser.id, 
+      newMessage.trim(),
+      'text',
+      undefined,
+      replyingTo?.id
+    );
     setNewMessage("");
+    setReplyingTo(null);
     loadMessages();
     loadConversations();
   };
@@ -87,6 +143,72 @@ const ProfileMessages = () => {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'file') => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUser || !selectedUser) return;
+
+    // Convert to base64 for storage
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      const attachment: MessageAttachment = {
+        id: `att-${Date.now()}`,
+        type: type,
+        url: base64,
+        name: file.name,
+        size: file.size,
+        mimeType: file.type,
+      };
+
+      chatStorage.sendMessage(
+        currentUser.id,
+        selectedUser.id,
+        type === 'image' ? '📷 Image' : `📎 ${file.name}`,
+        type,
+        [attachment]
+      );
+      loadMessages();
+      loadConversations();
+      toast.success(`${type === 'image' ? 'Image' : 'File'} sent!`);
+    };
+    reader.readAsDataURL(file);
+    setShowAttachmentMenu(false);
+  };
+
+  const handleReaction = (messageId: string, emoji: string) => {
+    if (!currentUser) return;
+    chatStorage.addReaction(messageId, currentUser.id, emoji);
+    loadMessages();
+    setShowEmojiPicker(null);
+  };
+
+  const handleDeleteMessage = (messageId: string) => {
+    chatStorage.deleteMessage(messageId);
+    loadMessages();
+    toast.success("Message deleted");
+  };
+
+  const handleEditMessage = () => {
+    if (!editingMessage || !editContent.trim()) return;
+    chatStorage.editMessage(editingMessage.id, editContent.trim());
+    setEditingMessage(null);
+    setEditContent("");
+    loadMessages();
+    toast.success("Message edited");
+  };
+
+  const handlePinMessage = (messageId: string) => {
+    chatStorage.togglePinMessage(messageId);
+    loadMessages();
+    loadPinnedMessages();
+    toast.success("Message pin toggled");
+  };
+
+  const handleCopyMessage = (content: string) => {
+    navigator.clipboard.writeText(content);
+    toast.success("Copied to clipboard");
   };
 
   const startNewChat = (user: User) => {
@@ -121,9 +243,19 @@ const ProfileMessages = () => {
     }
   };
 
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
   const filteredUsers = allUsers.filter(u =>
     u.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const searchedMessages = searchMessagesQuery
+    ? chatStorage.searchMessages(currentUser?.id || '', selectedUser?.id || '', searchMessagesQuery)
+    : [];
 
   if (!currentUser) {
     return (
@@ -133,11 +265,31 @@ const ProfileMessages = () => {
     );
   }
 
+  const getReplyMessage = (replyToId?: string) => {
+    if (!replyToId) return null;
+    return chatStorage.getMessageById(replyToId);
+  };
+
   return (
     <div className="h-[calc(100vh-4rem)] flex">
+      {/* Hidden file inputs */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        onChange={(e) => handleFileUpload(e, 'file')}
+      />
+      <input
+        type="file"
+        ref={imageInputRef}
+        className="hidden"
+        accept="image/*"
+        onChange={(e) => handleFileUpload(e, 'image')}
+      />
+
       {/* Conversations List */}
       <div className={cn(
-        "w-full md:w-80 border-r flex flex-col",
+        "w-full md:w-80 border-r flex flex-col bg-card",
         selectedUser && "hidden md:flex"
       )}>
         {/* Header */}
@@ -258,7 +410,7 @@ const ProfileMessages = () => {
         {selectedUser ? (
           <>
             {/* Chat Header */}
-            <div className="p-4 border-b flex items-center justify-between">
+            <div className="p-4 border-b flex items-center justify-between bg-card">
               <div className="flex items-center gap-3">
                 <Button
                   variant="ghost"
@@ -281,6 +433,20 @@ const ProfileMessages = () => {
                 </div>
               </div>
               <div className="flex items-center gap-1">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => setShowSearchMessages(!showSearchMessages)}
+                >
+                  <Search className="w-5 h-5" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => setShowPinnedMessages(true)}
+                >
+                  <Pin className="w-5 h-5" />
+                </Button>
                 <Button variant="ghost" size="icon">
                   <Phone className="w-5 h-5" />
                 </Button>
@@ -292,6 +458,37 @@ const ProfileMessages = () => {
                 </Button>
               </div>
             </div>
+
+            {/* Search Messages Bar */}
+            {showSearchMessages && (
+              <div className="p-2 border-b bg-muted/50">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search in conversation..."
+                    value={searchMessagesQuery}
+                    onChange={(e) => setSearchMessagesQuery(e.target.value)}
+                    className="pl-9 pr-9"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
+                    onClick={() => {
+                      setShowSearchMessages(false);
+                      setSearchMessagesQuery("");
+                    }}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+                {searchMessagesQuery && (
+                  <p className="text-xs text-muted-foreground mt-1 px-2">
+                    {searchedMessages.length} result(s) found
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Messages */}
             <ScrollArea className="flex-1 p-4">
@@ -310,12 +507,13 @@ const ProfileMessages = () => {
                 {messages.map((msg, index) => {
                   const isOwn = msg.senderId === currentUser.id;
                   const showAvatar = index === 0 || messages[index - 1]?.senderId !== msg.senderId;
+                  const replyMessage = getReplyMessage(msg.replyTo);
 
                   return (
                     <div
                       key={msg.id}
                       className={cn(
-                        "flex items-end gap-2",
+                        "flex items-end gap-2 group",
                         isOwn && "flex-row-reverse"
                       )}
                     >
@@ -327,30 +525,177 @@ const ProfileMessages = () => {
                       ) : (
                         <div className="w-8" />
                       )}
-                      <div
-                        className={cn(
-                          "max-w-[70%] rounded-2xl px-4 py-2",
-                          isOwn
-                            ? "bg-primary text-primary-foreground rounded-br-sm"
-                            : "bg-muted rounded-bl-sm"
+                      <div className="max-w-[70%] space-y-1">
+                        {/* Reply Preview */}
+                        {replyMessage && (
+                          <div className={cn(
+                            "text-xs px-3 py-1 rounded-lg border-l-2",
+                            isOwn ? "bg-primary/10 border-primary" : "bg-muted border-muted-foreground"
+                          )}>
+                            <p className="font-medium truncate">{replyMessage.content}</p>
+                          </div>
                         )}
-                      >
-                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                        <div className={cn(
-                          "flex items-center gap-1 mt-1",
-                          isOwn ? "justify-end" : "justify-start"
-                        )}>
-                          <span className="text-[10px] opacity-70">
-                            {formatTime(msg.createdAt)}
-                          </span>
-                          {isOwn && (
-                            msg.read ? (
-                              <CheckCheck className="w-3 h-3 opacity-70" />
-                            ) : (
-                              <Check className="w-3 h-3 opacity-70" />
-                            )
+                        
+                        {/* Message Bubble */}
+                        <div
+                          className={cn(
+                            "rounded-2xl px-4 py-2 relative",
+                            isOwn
+                              ? "bg-primary text-primary-foreground rounded-br-sm"
+                              : "bg-muted rounded-bl-sm",
+                            msg.isPinned && "ring-2 ring-primary/50"
+                          )}
+                        >
+                          {msg.isPinned && (
+                            <Pin className="absolute -top-2 -right-2 w-4 h-4 text-primary" />
+                          )}
+                          
+                          {/* Attachments */}
+                          {msg.attachments?.map(att => (
+                            <div key={att.id} className="mb-2">
+                              {att.type === 'image' ? (
+                                <img 
+                                  src={att.url} 
+                                  alt={att.name}
+                                  className="rounded-lg max-w-full max-h-64 object-cover cursor-pointer"
+                                  onClick={() => window.open(att.url, '_blank')}
+                                />
+                              ) : (
+                                <div className="flex items-center gap-2 p-2 bg-background/10 rounded-lg">
+                                  <File className="w-8 h-8" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate">{att.name}</p>
+                                    <p className="text-xs opacity-70">{formatFileSize(att.size)}</p>
+                                  </div>
+                                  <a href={att.url} download={att.name}>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                      <Download className="w-4 h-4" />
+                                    </Button>
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                          
+                          {msg.type === 'text' && (
+                            <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                          )}
+                          
+                          <div className={cn(
+                            "flex items-center gap-1 mt-1",
+                            isOwn ? "justify-end" : "justify-start"
+                          )}>
+                            <span className="text-[10px] opacity-70">
+                              {formatTime(msg.createdAt)}
+                            </span>
+                            {msg.isEdited && (
+                              <span className="text-[10px] opacity-50">edited</span>
+                            )}
+                            {isOwn && (
+                              msg.read ? (
+                                <CheckCheck className="w-3 h-3 opacity-70" />
+                              ) : (
+                                <Check className="w-3 h-3 opacity-70" />
+                              )
+                            )}
+                          </div>
+
+                          {/* Reactions */}
+                          {msg.reactions && msg.reactions.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {msg.reactions.map((r, i) => (
+                                <span 
+                                  key={i} 
+                                  className="text-xs bg-background/20 rounded-full px-1.5 py-0.5"
+                                >
+                                  {r.emoji}
+                                </span>
+                              ))}
+                            </div>
                           )}
                         </div>
+
+                        {/* Message Actions */}
+                        <div className={cn(
+                          "flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity",
+                          isOwn && "justify-end"
+                        )}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => setShowEmojiPicker(msg.id)}
+                          >
+                            <Smile className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => setReplyingTo(msg)}
+                          >
+                            <Reply className="w-3 h-3" />
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-6 w-6">
+                                <MoreVertical className="w-3 h-3" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align={isOwn ? "end" : "start"}>
+                              <DropdownMenuItem onClick={() => handleCopyMessage(msg.content)}>
+                                <Copy className="w-4 h-4 mr-2" />
+                                Copy
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handlePinMessage(msg.id)}>
+                                <Pin className="w-4 h-4 mr-2" />
+                                {msg.isPinned ? 'Unpin' : 'Pin'}
+                              </DropdownMenuItem>
+                              {isOwn && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => {
+                                    setEditingMessage(msg);
+                                    setEditContent(msg.content);
+                                  }}>
+                                    <Edit3 className="w-4 h-4 mr-2" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    className="text-destructive"
+                                    onClick={() => handleDeleteMessage(msg.id)}
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+
+                        {/* Emoji Picker */}
+                        {showEmojiPicker === msg.id && (
+                          <div className="flex gap-1 p-2 bg-card rounded-lg shadow-lg border">
+                            {EMOJI_LIST.map(emoji => (
+                              <button
+                                key={emoji}
+                                className="text-lg hover:scale-125 transition-transform"
+                                onClick={() => handleReaction(msg.id, emoji)}
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => setShowEmojiPicker(null)}
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -359,9 +704,41 @@ const ProfileMessages = () => {
               </div>
             </ScrollArea>
 
+            {/* Reply Preview */}
+            {replyingTo && (
+              <div className="px-4 py-2 border-t bg-muted/50 flex items-center gap-2">
+                <Reply className="w-4 h-4 text-muted-foreground" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground">Replying to</p>
+                  <p className="text-sm truncate">{replyingTo.content}</p>
+                </div>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setReplyingTo(null)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+
             {/* Message Input */}
-            <div className="p-4 border-t">
+            <div className="p-4 border-t bg-card">
               <div className="flex items-center gap-2">
+                <DropdownMenu open={showAttachmentMenu} onOpenChange={setShowAttachmentMenu}>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Paperclip className="w-5 h-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuItem onClick={() => imageInputRef.current?.click()}>
+                      <ImageIcon className="w-4 h-4 mr-2" />
+                      Image
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                      <File className="w-4 h-4 mr-2" />
+                      File
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                
                 <Input
                   placeholder="Type a message..."
                   value={newMessage}
@@ -380,7 +757,7 @@ const ProfileMessages = () => {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center bg-muted/20">
             <div className="text-center">
               <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
                 <Send className="w-8 h-8 text-muted-foreground" />
@@ -396,6 +773,50 @@ const ProfileMessages = () => {
           </div>
         )}
       </div>
+
+      {/* Edit Message Dialog */}
+      <Dialog open={!!editingMessage} onOpenChange={() => setEditingMessage(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Message</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            rows={4}
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setEditingMessage(null)}>Cancel</Button>
+            <Button onClick={handleEditMessage}>Save</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pinned Messages Dialog */}
+      <Dialog open={showPinnedMessages} onOpenChange={setShowPinnedMessages}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pin className="w-5 h-5" />
+              Pinned Messages
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[400px]">
+            {pinnedMessages.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No pinned messages</p>
+            ) : (
+              <div className="space-y-3">
+                {pinnedMessages.map(msg => (
+                  <div key={msg.id} className="p-3 bg-muted rounded-lg">
+                    <p className="text-sm">{msg.content}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{formatTime(msg.createdAt)}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

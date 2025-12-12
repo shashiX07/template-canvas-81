@@ -1,4 +1,4 @@
-import { Home, Compass, User, Settings, LogOut, Sparkles, PanelLeftClose, PanelLeft, MessageCircle } from "lucide-react";
+import { Home, Compass, User, Settings, LogOut, Sparkles, PanelLeftClose, PanelLeft, MessageCircle, Briefcase } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -23,6 +23,7 @@ const menuItems = [
   { title: "Home", url: "/profile", icon: Home, end: true },
   { title: "Explore", url: "/profile/explore", icon: Compass },
   { title: "Messages", url: "/profile/messages", icon: MessageCircle, hasBadge: true },
+  { title: "Business", url: "/profile/business", icon: Briefcase },
   { title: "Profile", url: "/profile/details", icon: User },
   { title: "Settings", url: "/profile/settings", icon: Settings },
 ];
