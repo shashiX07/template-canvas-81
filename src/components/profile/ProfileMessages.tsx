@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
 import { 
   Dialog,
   DialogContent,
@@ -33,6 +34,7 @@ import {
   Image as ImageIcon,
   File,
   Mic,
+  MicOff,
   Smile,
   Reply,
   Trash2,
@@ -41,10 +43,12 @@ import {
   Copy,
   Download,
   X,
-  GripVertical
+  Play,
+  Pause,
+  Square
 } from "lucide-react";
 import { userStorage, type User } from "@/lib/storage";
-import { chatStorage, type ChatMessage, type Conversation, type MessageAttachment } from "@/lib/chatStorage";
+import { chatStorage, VoiceRecorder, type ChatMessage, type Conversation, type MessageAttachment } from "@/lib/chatStorage";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -71,6 +75,17 @@ const ProfileMessages = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  
+  // Voice recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const voiceRecorderRef = useRef<VoiceRecorder | null>(null);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Audio playback state
+  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
+  const [audioProgress, setAudioProgress] = useState<Record<string, number>>({});
+  const audioRefs = useRef<Record<string, HTMLAudioElement>>({});
 
   useEffect(() => {
     if (currentUser) {
@@ -209,6 +224,122 @@ const ProfileMessages = () => {
   const handleCopyMessage = (content: string) => {
     navigator.clipboard.writeText(content);
     toast.success("Copied to clipboard");
+  };
+
+  // Voice recording functions
+  const startVoiceRecording = async () => {
+    try {
+      voiceRecorderRef.current = new VoiceRecorder();
+      await voiceRecorderRef.current.start();
+      setIsRecording(true);
+      setRecordingDuration(0);
+      
+      // Start timer
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+      
+      toast.success("Recording started");
+    } catch (error) {
+      toast.error("Could not access microphone");
+      console.error(error);
+    }
+  };
+
+  const stopVoiceRecording = async () => {
+    if (!voiceRecorderRef.current || !currentUser || !selectedUser) return;
+    
+    try {
+      const { base64, duration } = await voiceRecorderRef.current.stop();
+      
+      // Clear timer
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
+      }
+      
+      const attachment: MessageAttachment = {
+        id: `voice-${Date.now()}`,
+        type: 'voice',
+        url: base64,
+        name: 'Voice message',
+        size: base64.length,
+        mimeType: 'audio/webm',
+        duration
+      };
+
+      chatStorage.sendMessage(
+        currentUser.id,
+        selectedUser.id,
+        `🎤 Voice message (${formatVoiceDuration(duration)})`,
+        'voice',
+        [attachment]
+      );
+      
+      setIsRecording(false);
+      setRecordingDuration(0);
+      loadMessages();
+      loadConversations();
+      toast.success("Voice message sent!");
+    } catch (error) {
+      toast.error("Failed to send voice message");
+      console.error(error);
+    }
+  };
+
+  const cancelVoiceRecording = () => {
+    if (voiceRecorderRef.current) {
+      voiceRecorderRef.current.cancel();
+    }
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
+    setIsRecording(false);
+    setRecordingDuration(0);
+    toast.info("Recording cancelled");
+  };
+
+  const formatVoiceDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const toggleAudioPlayback = (messageId: string, audioUrl: string) => {
+    // Stop current audio if playing a different one
+    if (playingAudioId && playingAudioId !== messageId) {
+      const prevAudio = audioRefs.current[playingAudioId];
+      if (prevAudio) {
+        prevAudio.pause();
+        prevAudio.currentTime = 0;
+      }
+    }
+
+    let audio = audioRefs.current[messageId];
+    
+    if (!audio) {
+      audio = new Audio(audioUrl);
+      audioRefs.current[messageId] = audio;
+      
+      audio.ontimeupdate = () => {
+        const progress = (audio.currentTime / audio.duration) * 100;
+        setAudioProgress(prev => ({ ...prev, [messageId]: progress }));
+      };
+      
+      audio.onended = () => {
+        setPlayingAudioId(null);
+        setAudioProgress(prev => ({ ...prev, [messageId]: 0 }));
+      };
+    }
+
+    if (playingAudioId === messageId) {
+      audio.pause();
+      setPlayingAudioId(null);
+    } else {
+      audio.play();
+      setPlayingAudioId(messageId);
+    }
   };
 
   const startNewChat = (user: User) => {
@@ -560,6 +691,30 @@ const ProfileMessages = () => {
                                   className="rounded-lg max-w-full max-h-64 object-cover cursor-pointer"
                                   onClick={() => window.open(att.url, '_blank')}
                                 />
+                              ) : att.type === 'voice' ? (
+                                <div className="flex items-center gap-3 p-3 bg-background/10 rounded-lg min-w-[200px]">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-10 w-10 rounded-full bg-primary/20 hover:bg-primary/30"
+                                    onClick={() => toggleAudioPlayback(msg.id, att.url)}
+                                  >
+                                    {playingAudioId === msg.id ? (
+                                      <Pause className="w-5 h-5" />
+                                    ) : (
+                                      <Play className="w-5 h-5 ml-0.5" />
+                                    )}
+                                  </Button>
+                                  <div className="flex-1">
+                                    <Progress 
+                                      value={audioProgress[msg.id] || 0} 
+                                      className="h-1.5"
+                                    />
+                                    <p className="text-xs opacity-70 mt-1">
+                                      {att.duration ? formatVoiceDuration(att.duration) : '0:00'}
+                                    </p>
+                                  </div>
+                                </div>
                               ) : (
                                 <div className="flex items-center gap-2 p-2 bg-background/10 rounded-lg">
                                   <File className="w-8 h-8" />
@@ -720,40 +875,78 @@ const ProfileMessages = () => {
 
             {/* Message Input */}
             <div className="p-4 border-t bg-card">
-              <div className="flex items-center gap-2">
-                <DropdownMenu open={showAttachmentMenu} onOpenChange={setShowAttachmentMenu}>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <Paperclip className="w-5 h-5" />
+              {isRecording ? (
+                <div className="flex items-center gap-3 bg-destructive/10 rounded-lg p-3">
+                  <div className="flex items-center gap-2 flex-1">
+                    <div className="w-3 h-3 bg-destructive rounded-full animate-pulse" />
+                    <span className="text-sm font-medium">Recording...</span>
+                    <span className="text-sm text-muted-foreground">
+                      {formatVoiceDuration(recordingDuration)}
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={cancelVoiceRecording}
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="icon"
+                    onClick={stopVoiceRecording}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <DropdownMenu open={showAttachmentMenu} onOpenChange={setShowAttachmentMenu}>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <Paperclip className="w-5 h-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      <DropdownMenuItem onClick={() => imageInputRef.current?.click()}>
+                        <ImageIcon className="w-4 h-4 mr-2" />
+                        Image
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                        <File className="w-4 h-4 mr-2" />
+                        File
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  
+                  <Input
+                    placeholder="Type a message..."
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    className="flex-1"
+                  />
+                  
+                  {newMessage.trim() ? (
+                    <Button 
+                      onClick={handleSend}
+                      size="icon"
+                    >
+                      <Send className="w-4 h-4" />
                     </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start">
-                    <DropdownMenuItem onClick={() => imageInputRef.current?.click()}>
-                      <ImageIcon className="w-4 h-4 mr-2" />
-                      Image
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                      <File className="w-4 h-4 mr-2" />
-                      File
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                
-                <Input
-                  placeholder="Type a message..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  className="flex-1"
-                />
-                <Button 
-                  onClick={handleSend}
-                  disabled={!newMessage.trim()}
-                  size="icon"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={startVoiceRecording}
+                      className="hover:bg-primary/10"
+                    >
+                      <Mic className="w-5 h-5" />
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           </>
         ) : (
