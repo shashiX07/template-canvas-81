@@ -1,4 +1,4 @@
-// Chat System Storage - Enhanced with file sharing, reactions, and more
+// Chat System Storage - Enhanced with file sharing, reactions, voice messages and more
 
 export type MessageType = 'text' | 'image' | 'file' | 'voice' | 'gif';
 
@@ -9,7 +9,73 @@ export interface MessageAttachment {
   name: string;
   size: number;
   mimeType?: string;
-  duration?: number; // For voice messages
+  duration?: number; // For voice messages in seconds
+}
+
+// Voice recording utility class
+export class VoiceRecorder {
+  private mediaRecorder: MediaRecorder | null = null;
+  private audioChunks: Blob[] = [];
+  private startTime: number = 0;
+
+  async start(): Promise<void> {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+    this.audioChunks = [];
+    this.startTime = Date.now();
+
+    this.mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        this.audioChunks.push(event.data);
+      }
+    };
+
+    this.mediaRecorder.start(100);
+  }
+
+  stop(): Promise<{ blob: Blob; duration: number; base64: string }> {
+    return new Promise((resolve, reject) => {
+      if (!this.mediaRecorder) {
+        reject(new Error('No recording in progress'));
+        return;
+      }
+
+      const duration = Math.floor((Date.now() - this.startTime) / 1000);
+
+      this.mediaRecorder.onstop = () => {
+        const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
+        
+        // Stop all tracks
+        this.mediaRecorder?.stream.getTracks().forEach(track => track.stop());
+        
+        // Convert to base64
+        const reader = new FileReader();
+        reader.onload = () => {
+          resolve({
+            blob,
+            duration,
+            base64: reader.result as string
+          });
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      };
+
+      this.mediaRecorder.stop();
+    });
+  }
+
+  cancel(): void {
+    if (this.mediaRecorder) {
+      this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+      this.mediaRecorder = null;
+      this.audioChunks = [];
+    }
+  }
+
+  isRecording(): boolean {
+    return this.mediaRecorder?.state === 'recording';
+  }
 }
 
 export interface MessageReaction {
