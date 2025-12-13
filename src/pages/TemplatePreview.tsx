@@ -48,18 +48,25 @@ const TemplatePreview = () => {
           html = html.replace('</body>', `${jsInjects}\n</body>`);
         }
         
-        // Replace asset paths with base64 data
+        // Replace asset paths with base64 data (robust matching)
         if (template.assets) {
           Object.entries(template.assets).forEach(([filename, dataUrl]) => {
+            // Escape special regex characters in filename
+            const escapedFilename = filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            
+            // Match various path formats: ./assets/img.png, assets/img.png, ../img.png, img.png
             const patterns = [
-              new RegExp(`src=["'].*?${filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`, 'gi'),
-              new RegExp(`href=["'].*?${filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`, 'gi'),
-              new RegExp(`url\\(['"]?.*?${filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"]?\\)`, 'gi'),
+              new RegExp(`src=["'][^"']*${escapedFilename}["']`, 'gi'),
+              new RegExp(`href=["'][^"']*${escapedFilename}["']`, 'gi'),
+              new RegExp(`url\\(["']?[^)]*${escapedFilename}["']?\\)`, 'gi'),
+              new RegExp(`poster=["'][^"']*${escapedFilename}["']`, 'gi'),
             ];
+            
             patterns.forEach(pattern => {
               html = html.replace(pattern, (match) => {
-                if (match.toLowerCase().includes('src=')) return `src="${dataUrl}"`;
-                if (match.toLowerCase().includes('href=')) return `href="${dataUrl}"`;
+                if (match.toLowerCase().startsWith('src=')) return `src="${dataUrl}"`;
+                if (match.toLowerCase().startsWith('href=')) return `href="${dataUrl}"`;
+                if (match.toLowerCase().startsWith('poster=')) return `poster="${dataUrl}"`;
                 return `url('${dataUrl}')`;
               });
             });
