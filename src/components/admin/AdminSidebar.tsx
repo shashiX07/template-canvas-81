@@ -28,6 +28,7 @@ const mainMenuItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard, end: true },
   { title: "Freelancers", url: "/admin/freelancers", icon: Users },
   { title: "Templates", url: "/admin/templates", icon: FileText },
+  { title: "Custom Elements", url: "/admin/elements", icon: Sparkles },
   { title: "Activity Log", url: "/admin/activity", icon: Activity },
   { title: "Upload Template", url: "/admin/upload", icon: Upload },
   { title: "Settings", url: "/admin/settings", icon: Settings },
