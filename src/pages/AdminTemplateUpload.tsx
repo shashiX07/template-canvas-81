@@ -58,8 +58,23 @@ const AdminTemplateUpload = () => {
       const zip = new JSZip();
       const contents = await zip.loadAsync(file);
       
-      // Look for index.html
-      const indexFile = contents.file("index.html");
+      // Look for index.html (root or inside a folder)
+      let indexFile = contents.file("index.html");
+      if (!indexFile) {
+        // Check if there's a single folder containing index.html
+        const folders = Object.keys(contents.files).filter(name => {
+          const file = contents.files[name];
+          return file.dir && !name.includes('/');
+        });
+        for (const folder of folders) {
+          const nestedIndex = contents.file(`${folder}/index.html`);
+          if (nestedIndex) {
+            indexFile = nestedIndex;
+            break;
+          }
+        }
+      }
+      
       if (!indexFile) {
         toast.error("ZIP must contain an index.html file");
         return;
@@ -68,68 +83,76 @@ const AdminTemplateUpload = () => {
       const html = await indexFile.async("string");
       setHtmlContent(html);
       
-      // Extract CSS files
+      // Extract all CSS files from anywhere in the ZIP
       const cssFiles: Record<string, string> = {};
-      const cssFolder = contents.folder("css");
-      if (cssFolder) {
-        const cssPromises: Promise<void>[] = [];
-        cssFolder.forEach((relativePath, file) => {
-          if (!file.dir && relativePath.endsWith('.css')) {
-            cssPromises.push(
-              file.async("string").then(content => {
-                cssFiles[relativePath] = content;
-              })
-            );
-          }
-        });
-        await Promise.all(cssPromises);
-      }
+      const cssPromises: Promise<void>[] = [];
+      contents.forEach((relativePath, file) => {
+        if (!file.dir && relativePath.endsWith('.css')) {
+          cssPromises.push(
+            file.async("string").then(content => {
+              // Store with just the filename for easier matching
+              const filename = relativePath.split('/').pop() || relativePath;
+              cssFiles[filename] = content;
+            })
+          );
+        }
+      });
+      await Promise.all(cssPromises);
       
-      // Extract JS files
+      // Extract all JS files from anywhere in the ZIP
       const jsFiles: Record<string, string> = {};
-      const jsFolder = contents.folder("js");
-      if (jsFolder) {
-        const jsPromises: Promise<void>[] = [];
-        jsFolder.forEach((relativePath, file) => {
-          if (!file.dir && relativePath.endsWith('.js')) {
-            jsPromises.push(
-              file.async("string").then(content => {
-                jsFiles[relativePath] = content;
-              })
-            );
-          }
-        });
-        await Promise.all(jsPromises);
-      }
+      const jsPromises: Promise<void>[] = [];
+      contents.forEach((relativePath, file) => {
+        if (!file.dir && relativePath.endsWith('.js')) {
+          jsPromises.push(
+            file.async("string").then(content => {
+              const filename = relativePath.split('/').pop() || relativePath;
+              jsFiles[filename] = content;
+            })
+          );
+        }
+      });
+      await Promise.all(jsPromises);
       
-      // Extract assets
+      // Extract all image/video assets from anywhere in the ZIP
       const assets: Record<string, string> = {};
-      const assetsFolder = contents.folder("assets");
-      if (assetsFolder) {
-        const assetPromises: Promise<void>[] = [];
-        assetsFolder.forEach((relativePath, file) => {
-          if (!file.dir) {
+      const assetPromises: Promise<void>[] = [];
+      const assetExtensions = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico', 'mp4', 'webm', 'ogg', 'woff', 'woff2', 'ttf', 'eot'];
+      
+      contents.forEach((relativePath, file) => {
+        if (!file.dir) {
+          const ext = relativePath.split('.').pop()?.toLowerCase();
+          if (ext && assetExtensions.includes(ext)) {
             assetPromises.push(
               file.async("base64").then(content => {
-                const ext = relativePath.split('.').pop()?.toLowerCase();
                 let mimeType = 'application/octet-stream';
                 if (ext === 'png') mimeType = 'image/png';
                 else if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg';
                 else if (ext === 'gif') mimeType = 'image/gif';
                 else if (ext === 'svg') mimeType = 'image/svg+xml';
                 else if (ext === 'webp') mimeType = 'image/webp';
+                else if (ext === 'ico') mimeType = 'image/x-icon';
                 else if (ext === 'mp4') mimeType = 'video/mp4';
                 else if (ext === 'webm') mimeType = 'video/webm';
+                else if (ext === 'ogg') mimeType = 'video/ogg';
+                else if (ext === 'woff') mimeType = 'font/woff';
+                else if (ext === 'woff2') mimeType = 'font/woff2';
+                else if (ext === 'ttf') mimeType = 'font/ttf';
+                else if (ext === 'eot') mimeType = 'application/vnd.ms-fontobject';
+                
+                // Store with full path AND just filename for flexible matching
+                const filename = relativePath.split('/').pop() || relativePath;
+                assets[filename] = `data:${mimeType};base64,${content}`;
                 assets[relativePath] = `data:${mimeType};base64,${content}`;
               })
             );
           }
-        });
-        await Promise.all(assetPromises);
-      }
+        }
+      });
+      await Promise.all(assetPromises);
       
       setFormData(prev => ({ ...prev, cssFiles, jsFiles, assets }));
-      toast.success("ZIP file processed successfully with all assets");
+      toast.success(`ZIP processed: ${Object.keys(cssFiles).length} CSS, ${Object.keys(jsFiles).length} JS, ${Object.keys(assets).length / 2} assets`);
     } catch (error) {
       toast.error("Error processing ZIP file");
       console.error(error);

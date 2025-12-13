@@ -149,18 +149,25 @@ const Editor = () => {
           completeHtml = completeHtml.replace('</body>', `${jsInjects}\n</body>`);
         }
         
-        // Replace asset paths with base64 data
+        // Replace asset paths with base64 data (robust matching)
         if (template.assets) {
           Object.entries(template.assets).forEach(([filename, dataUrl]) => {
+            // Escape special regex characters in filename
+            const escapedFilename = filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            
+            // Match various path formats: ./assets/img.png, assets/img.png, ../img.png, img.png
             const patterns = [
-              new RegExp(`src=["'].*${filename}["']`, 'g'),
-              new RegExp(`href=["'].*${filename}["']`, 'g'),
-              new RegExp(`url\\(['"].*${filename}['"]\\)`, 'g'),
+              new RegExp(`src=["'][^"']*${escapedFilename}["']`, 'gi'),
+              new RegExp(`href=["'][^"']*${escapedFilename}["']`, 'gi'),
+              new RegExp(`url\\(["']?[^)]*${escapedFilename}["']?\\)`, 'gi'),
+              new RegExp(`poster=["'][^"']*${escapedFilename}["']`, 'gi'),
             ];
+            
             patterns.forEach(pattern => {
               completeHtml = completeHtml.replace(pattern, (match) => {
-                if (match.includes('src=')) return `src="${dataUrl}"`;
-                if (match.includes('href=')) return `href="${dataUrl}"`;
+                if (match.toLowerCase().startsWith('src=')) return `src="${dataUrl}"`;
+                if (match.toLowerCase().startsWith('href=')) return `href="${dataUrl}"`;
+                if (match.toLowerCase().startsWith('poster=')) return `poster="${dataUrl}"`;
                 return `url('${dataUrl}')`;
               });
             });

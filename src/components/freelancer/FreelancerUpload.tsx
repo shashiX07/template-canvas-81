@@ -10,8 +10,9 @@ import { Progress } from '@/components/ui/progress';
 import { Upload, FileText, Image as ImageIcon, Check, ArrowRight, ArrowLeft } from 'lucide-react';
 import { freelancerTemplateStorage } from '@/lib/storage';
 import type { FreelancerTemplate } from '@/lib/storage';
-import { fileToBase64, validateTemplateZip } from '@/lib/freelancerUtils';
+import { fileToBase64 } from '@/lib/freelancerUtils';
 import { toast } from 'sonner';
+import JSZip from 'jszip';
 
 interface FreelancerUploadProps {
   freelancerId: string;
@@ -26,6 +27,10 @@ export default function FreelancerUpload({ freelancerId }: FreelancerUploadProps
   // Step 1
   const [zipFile, setZipFile] = useState<File | null>(null);
   const [thumbnail, setThumbnail] = useState('');
+  const [htmlContent, setHtmlContent] = useState('');
+  const [cssFiles, setCssFiles] = useState<Record<string, string>>({});
+  const [jsFiles, setJsFiles] = useState<Record<string, string>>({});
+  const [assets, setAssets] = useState<Record<string, string>>({});
 
   // Step 2
   const [title, setTitle] = useState('');
@@ -43,13 +48,116 @@ export default function FreelancerUpload({ freelancerId }: FreelancerUploadProps
     if (!file) return;
 
     if (type === 'zip') {
-      const validation = await validateTemplateZip(file);
-      if (!validation.valid) {
-        toast.error(validation.error);
+      if (file.size > 50 * 1024 * 1024) {
+        toast.error('File size must be less than 50MB');
         return;
       }
-      setZipFile(file);
-      toast.success('Template file uploaded');
+      if (!file.name.endsWith('.zip')) {
+        toast.error('File must be a ZIP archive');
+        return;
+      }
+      
+      try {
+        const zip = new JSZip();
+        const contents = await zip.loadAsync(file);
+        
+        // Look for index.html (root or inside a folder)
+        let indexFile = contents.file("index.html");
+        if (!indexFile) {
+          const folders = Object.keys(contents.files).filter(name => {
+            const f = contents.files[name];
+            return f.dir && !name.includes('/');
+          });
+          for (const folder of folders) {
+            const nestedIndex = contents.file(`${folder}/index.html`);
+            if (nestedIndex) {
+              indexFile = nestedIndex;
+              break;
+            }
+          }
+        }
+        
+        if (!indexFile) {
+          toast.error("ZIP must contain an index.html file");
+          return;
+        }
+
+        const html = await indexFile.async("string");
+        setHtmlContent(html);
+        
+        // Extract all CSS files
+        const extractedCss: Record<string, string> = {};
+        const cssPromises: Promise<void>[] = [];
+        contents.forEach((relativePath, f) => {
+          if (!f.dir && relativePath.endsWith('.css')) {
+            cssPromises.push(
+              f.async("string").then(content => {
+                const filename = relativePath.split('/').pop() || relativePath;
+                extractedCss[filename] = content;
+              })
+            );
+          }
+        });
+        await Promise.all(cssPromises);
+        setCssFiles(extractedCss);
+        
+        // Extract all JS files
+        const extractedJs: Record<string, string> = {};
+        const jsPromises: Promise<void>[] = [];
+        contents.forEach((relativePath, f) => {
+          if (!f.dir && relativePath.endsWith('.js')) {
+            jsPromises.push(
+              f.async("string").then(content => {
+                const filename = relativePath.split('/').pop() || relativePath;
+                extractedJs[filename] = content;
+              })
+            );
+          }
+        });
+        await Promise.all(jsPromises);
+        setJsFiles(extractedJs);
+        
+        // Extract all assets
+        const extractedAssets: Record<string, string> = {};
+        const assetPromises: Promise<void>[] = [];
+        const assetExtensions = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico', 'mp4', 'webm', 'ogg', 'woff', 'woff2', 'ttf', 'eot'];
+        
+        contents.forEach((relativePath, f) => {
+          if (!f.dir) {
+            const ext = relativePath.split('.').pop()?.toLowerCase();
+            if (ext && assetExtensions.includes(ext)) {
+              assetPromises.push(
+                f.async("base64").then(content => {
+                  let mimeType = 'application/octet-stream';
+                  if (ext === 'png') mimeType = 'image/png';
+                  else if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg';
+                  else if (ext === 'gif') mimeType = 'image/gif';
+                  else if (ext === 'svg') mimeType = 'image/svg+xml';
+                  else if (ext === 'webp') mimeType = 'image/webp';
+                  else if (ext === 'ico') mimeType = 'image/x-icon';
+                  else if (ext === 'mp4') mimeType = 'video/mp4';
+                  else if (ext === 'webm') mimeType = 'video/webm';
+                  else if (ext === 'woff') mimeType = 'font/woff';
+                  else if (ext === 'woff2') mimeType = 'font/woff2';
+                  else if (ext === 'ttf') mimeType = 'font/ttf';
+                  
+                  const filename = relativePath.split('/').pop() || relativePath;
+                  extractedAssets[filename] = `data:${mimeType};base64,${content}`;
+                  extractedAssets[relativePath] = `data:${mimeType};base64,${content}`;
+                })
+              );
+            }
+          }
+        });
+        await Promise.all(assetPromises);
+        setAssets(extractedAssets);
+        
+        setZipFile(file);
+        toast.success(`Template extracted: ${Object.keys(extractedCss).length} CSS, ${Object.keys(extractedJs).length} JS, ${Object.keys(extractedAssets).length / 2} assets`);
+      } catch (error) {
+        toast.error("Error processing ZIP file");
+        console.error(error);
+      }
     } else if (type === 'thumbnail') {
       if (file.size > 2 * 1024 * 1024) {
         toast.error('Thumbnail must be less than 2MB');
@@ -69,7 +177,10 @@ export default function FreelancerUpload({ freelancerId }: FreelancerUploadProps
       thumbnail,
       category,
       tags,
-      htmlContent: '<html><body><h1>Template</h1></body></html>',
+      htmlContent: htmlContent || '<html><body><h1>Template</h1></body></html>',
+      cssFiles,
+      jsFiles,
+      assets,
       isPublic: false,
       isPremium,
       price: isPremium ? price : undefined,
@@ -93,6 +204,10 @@ export default function FreelancerUpload({ freelancerId }: FreelancerUploadProps
     setStep(1);
     setZipFile(null);
     setThumbnail('');
+    setHtmlContent('');
+    setCssFiles({});
+    setJsFiles({});
+    setAssets({});
     setTitle('');
     setDescription('');
     setCategory('');
