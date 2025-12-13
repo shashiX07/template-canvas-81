@@ -13,6 +13,7 @@ import { BarChart3, Users, FileText, Upload, UserPlus, Edit, Trash2, Eye, EyeOff
 import { templateStorage, userStorage, type Template, type User } from "@/lib/storage";
 import { FreelancerManagement } from "@/components/admin/FreelancerManagement";
 import { FreelancerActivity } from "@/components/admin/FreelancerActivity";
+import { CustomElementEditor } from "@/components/admin/CustomElementEditor";
 import { toast } from "sonner";
 
 // Dashboard Overview
@@ -353,6 +354,15 @@ function ActivityPage() {
   );
 }
 
+// Custom Elements Page
+function ElementsPage() {
+  return (
+    <div className="container mx-auto p-6">
+      <CustomElementEditor />
+    </div>
+  );
+}
+
 // Settings Page
 function SettingsPage() {
   return (
@@ -398,6 +408,7 @@ const Admin = () => {
             <Route path="/" element={<AdminDashboard />} />
             <Route path="/freelancers" element={<FreelancersPage />} />
             <Route path="/templates" element={<TemplatesPage />} />
+            <Route path="/elements" element={<ElementsPage />} />
             <Route path="/activity" element={<ActivityPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>

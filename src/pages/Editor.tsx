@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,12 +10,46 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Download, ArrowLeft, Upload, Settings, Plus } from "lucide-react";
+import { Save, Download, ArrowLeft, Upload, Settings, Plus, Copy, Clipboard, Trash2, Monitor, Tablet, Smartphone } from "lucide-react";
 import { templateStorage, customizedTemplateStorage, userStorage, type Template, type CustomizedTemplate } from "@/lib/storage";
 import { toast } from "sonner";
 import { DraggableElements } from "@/components/editor/DraggableElements";
+import { FloatingToolbar } from "@/components/editor/FloatingToolbar";
+import { SelectionOverlay } from "@/components/editor/SelectionOverlay";
 
 type ElementType = 'text' | 'image' | 'video' | 'container' | 'none';
+
+// Text animation keyframes to inject
+const animationStyles = `
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+@keyframes wave {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+@keyframes glow {
+  from { text-shadow: 0 0 5px currentColor, 0 0 10px currentColor; }
+  to { text-shadow: 0 0 20px currentColor, 0 0 30px currentColor; }
+}
+`;
 
 const Editor = () => {
   const { id } = useParams();
@@ -27,6 +61,19 @@ const Editor = () => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // Clipboard for copy/paste
+  const [clipboard, setClipboard] = useState<string | null>(null);
+  
+  // Floating toolbar
+  const [toolbarPosition, setToolbarPosition] = useState({ x: 0, y: 0 });
+  const [showToolbar, setShowToolbar] = useState(false);
+  
+  // Inline editing
+  const [isInlineEditing, setIsInlineEditing] = useState(false);
+  
+  // Viewport preview
+  const [viewport, setViewport] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  
   // Text properties
   const [textContent, setTextContent] = useState("");
   const [textColor, setTextColor] = useState("#000000");
@@ -36,6 +83,7 @@ const Editor = () => {
   const [fontWeight, setFontWeight] = useState("400");
   const [textAlign, setTextAlign] = useState("left");
   const [textDecoration, setTextDecoration] = useState("none");
+  const [fontStyle, setFontStyle] = useState("normal");
   
   // Image properties
   const [imageWidth, setImageWidth] = useState("100");
@@ -47,6 +95,16 @@ const Editor = () => {
   const [videoMuted, setVideoMuted] = useState(false);
   const [videoLoop, setVideoLoop] = useState(false);
   const [videoControls, setVideoControls] = useState(true);
+  const [videoWidth, setVideoWidth] = useState("100%");
+  const [videoHeight, setVideoHeight] = useState("auto");
+  const [videoPoster, setVideoPoster] = useState("");
+  const [videoFilter, setVideoFilter] = useState("none");
+
+  const viewportWidths = {
+    desktop: '100%',
+    tablet: '768px',
+    mobile: '375px',
+  };
 
   useEffect(() => {
     if (id) {
@@ -69,8 +127,11 @@ const Editor = () => {
       if (iframeDoc) {
         iframeDoc.open();
         
-        // Build complete HTML with CSS and JS
+        // Build complete HTML with CSS, JS, and animations
         let completeHtml = htmlContent;
+        
+        // Inject animation styles
+        completeHtml = completeHtml.replace('</head>', `<style>${animationStyles}</style>\n</head>`);
         
         // Inject CSS files
         if (template.cssFiles) {
@@ -135,6 +196,19 @@ const Editor = () => {
           }
         });
 
+        // Keyboard shortcuts for copy/paste
+        iframeDoc.addEventListener('keydown', (e) => {
+          if ((e.ctrlKey || e.metaKey) && selectedElement) {
+            if (e.key === 'c') {
+              handleCopyElement();
+            } else if (e.key === 'v') {
+              handlePasteElement();
+            } else if (e.key === 'Delete' || e.key === 'Backspace') {
+              handleDeleteElement();
+            }
+          }
+        });
+
         // Make elements clickable with better highlighting
         const allElements = iframeDoc.body.querySelectorAll('*');
         allElements.forEach((el) => {
@@ -143,7 +217,7 @@ const Editor = () => {
           element.style.transition = 'outline 0.2s ease';
           
           element.addEventListener('mouseenter', () => {
-            if (element !== selectedElement) {
+            if (element !== selectedElement && !isInlineEditing) {
               element.style.outline = '2px dashed hsl(var(--primary) / 0.5)';
               element.style.outlineOffset = '2px';
             }
@@ -155,23 +229,76 @@ const Editor = () => {
             }
           });
           
+          // Double-click for inline editing
+          element.addEventListener('dblclick', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const tagName = element.tagName.toLowerCase();
+            if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'a', 'button', 'li', 'td', 'th', 'label'].includes(tagName) || 
+                (element.childNodes.length === 1 && element.childNodes[0].nodeType === Node.TEXT_NODE)) {
+              setIsInlineEditing(true);
+              element.contentEditable = 'true';
+              element.focus();
+              
+              // Select all text
+              const range = iframeDoc.createRange();
+              range.selectNodeContents(element);
+              const selection = iframeDoc.getSelection();
+              selection?.removeAllRanges();
+              selection?.addRange(range);
+              
+              // Exit inline editing on blur
+              const handleBlur = () => {
+                element.contentEditable = 'false';
+                setIsInlineEditing(false);
+                setTextContent(element.innerText || "");
+                element.removeEventListener('blur', handleBlur);
+              };
+              element.addEventListener('blur', handleBlur);
+            }
+          });
+          
           element.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             
+            if (isInlineEditing) return;
+            
             // Remove highlight from previous selection
             if (selectedElement) {
               selectedElement.style.outline = 'none';
+              selectedElement.style.boxShadow = 'none';
             }
             
             setSelectedElement(element);
             element.style.outline = '3px solid hsl(var(--primary))';
             element.style.outlineOffset = '4px';
-            element.style.boxShadow = '0 0 0 1px hsl(var(--primary) / 0.2)';
+            
+            // Calculate toolbar position
+            const rect = element.getBoundingClientRect();
+            const iframeRect = iframe.getBoundingClientRect();
+            setToolbarPosition({
+              x: iframeRect.left + rect.left + rect.width / 2,
+              y: iframeRect.top + rect.top,
+            });
+            setShowToolbar(true);
             
             // Detect element type and load properties
             detectElementType(element);
           });
+        });
+        
+        // Click outside to deselect
+        iframeDoc.addEventListener('click', (e) => {
+          if (e.target === iframeDoc.body) {
+            if (selectedElement) {
+              selectedElement.style.outline = 'none';
+            }
+            setSelectedElement(null);
+            setElementType('none');
+            setShowToolbar(false);
+          }
         });
       }
     }
@@ -205,6 +332,7 @@ const Editor = () => {
     setFontWeight(computedStyle.fontWeight);
     setTextAlign(computedStyle.textAlign);
     setTextDecoration(computedStyle.textDecoration.split(' ')[0]);
+    setFontStyle(computedStyle.fontStyle);
   };
   
   const loadImageProperties = (element: HTMLImageElement) => {
@@ -219,6 +347,10 @@ const Editor = () => {
     setVideoMuted(element.muted);
     setVideoLoop(element.loop);
     setVideoControls(element.controls);
+    setVideoWidth(element.style.width || "100%");
+    setVideoHeight(element.style.height || "auto");
+    setVideoPoster(element.poster || "");
+    setVideoFilter(element.style.filter || "none");
   };
   
   const rgbToHex = (rgb: string): string => {
@@ -231,7 +363,38 @@ const Editor = () => {
     return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
   };
 
-  // Memoized real-time update handlers - Changes are applied directly to DOM without reloading
+  // Copy/Paste/Delete handlers
+  const handleCopyElement = useCallback(() => {
+    if (selectedElement) {
+      setClipboard(selectedElement.outerHTML);
+      toast.success("Element copied");
+    }
+  }, [selectedElement]);
+
+  const handlePasteElement = useCallback(() => {
+    if (clipboard && iframeRef.current?.contentDocument) {
+      const doc = iframeRef.current.contentDocument;
+      const wrapper = doc.createElement('div');
+      wrapper.innerHTML = clipboard;
+      const element = wrapper.firstElementChild;
+      if (element && selectedElement) {
+        selectedElement.parentElement?.insertBefore(element, selectedElement.nextSibling);
+        toast.success("Element pasted");
+      }
+    }
+  }, [clipboard, selectedElement]);
+
+  const handleDeleteElement = useCallback(() => {
+    if (selectedElement && selectedElement.parentElement) {
+      selectedElement.remove();
+      setSelectedElement(null);
+      setElementType('none');
+      setShowToolbar(false);
+      toast.success("Element deleted");
+    }
+  }, [selectedElement]);
+
+  // Memoized real-time update handlers
   const updateTextContent = useCallback((value: string) => {
     setTextContent(value);
     if (selectedElement) {
@@ -273,6 +436,13 @@ const Editor = () => {
       selectedElement.style.fontWeight = value;
     }
   }, [selectedElement]);
+
+  const updateFontStyle = useCallback((value: string) => {
+    setFontStyle(value);
+    if (selectedElement) {
+      selectedElement.style.fontStyle = value;
+    }
+  }, [selectedElement]);
   
   const updateTextAlign = useCallback((value: string) => {
     setTextAlign(value);
@@ -285,6 +455,13 @@ const Editor = () => {
     setTextDecoration(value);
     if (selectedElement) {
       selectedElement.style.textDecoration = value;
+    }
+  }, [selectedElement]);
+
+  const addAnimation = useCallback((animationCss: string) => {
+    if (selectedElement) {
+      selectedElement.style.cssText += animationCss;
+      toast.success("Animation applied");
     }
   }, [selectedElement]);
   
@@ -336,6 +513,34 @@ const Editor = () => {
       (selectedElement as HTMLVideoElement).controls = value;
     }
   }, [selectedElement]);
+
+  const updateVideoWidth = useCallback((value: string) => {
+    setVideoWidth(value);
+    if (selectedElement && selectedElement.tagName === 'VIDEO') {
+      selectedElement.style.width = value;
+    }
+  }, [selectedElement]);
+
+  const updateVideoHeight = useCallback((value: string) => {
+    setVideoHeight(value);
+    if (selectedElement && selectedElement.tagName === 'VIDEO') {
+      selectedElement.style.height = value;
+    }
+  }, [selectedElement]);
+
+  const updateVideoPoster = useCallback((value: string) => {
+    setVideoPoster(value);
+    if (selectedElement && selectedElement.tagName === 'VIDEO') {
+      (selectedElement as HTMLVideoElement).poster = value;
+    }
+  }, [selectedElement]);
+
+  const updateVideoFilter = useCallback((value: string) => {
+    setVideoFilter(value);
+    if (selectedElement && selectedElement.tagName === 'VIDEO') {
+      selectedElement.style.filter = value;
+    }
+  }, [selectedElement]);
   
   const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -344,7 +549,6 @@ const Editor = () => {
       reader.onload = (event) => {
         const dataUrl = event.target?.result as string;
         
-        // Store in localStorage (update template assets)
         if (template) {
           const updatedAssets = { ...(template.assets || {}), [file.name]: dataUrl };
           const updatedTemplate = { ...template, assets: updatedAssets };
@@ -364,6 +568,18 @@ const Editor = () => {
       reader.readAsDataURL(file);
     }
   };
+
+  const handlePosterUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        updateVideoPoster(dataUrl);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
   
   const updateHtmlContent = () => {
     const iframeDoc = iframeRef.current?.contentDocument;
@@ -379,10 +595,8 @@ const Editor = () => {
       return;
     }
 
-    // Capture current state from iframe before saving
     updateHtmlContent();
     
-    // Use a timeout to ensure htmlContent state is updated
     setTimeout(() => {
       const customized: CustomizedTemplate = {
         id: `custom-${Date.now()}`,
@@ -413,7 +627,6 @@ const Editor = () => {
   };
 
   const handleDownload = () => {
-    // Get current HTML from iframe
     const currentHtml = iframeRef.current?.contentDocument?.documentElement.outerHTML || htmlContent;
     const blob = new Blob([currentHtml], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
@@ -435,6 +648,32 @@ const Editor = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Floating Toolbar */}
+      <FloatingToolbar
+        position={toolbarPosition}
+        visible={showToolbar && (elementType === 'text' || elementType === 'container')}
+        onBold={() => updateFontWeight(fontWeight === '700' ? '400' : '700')}
+        onItalic={() => updateFontStyle(fontStyle === 'italic' ? 'normal' : 'italic')}
+        onUnderline={() => updateTextDecoration(textDecoration === 'underline' ? 'none' : 'underline')}
+        onStrikethrough={() => updateTextDecoration(textDecoration === 'line-through' ? 'none' : 'line-through')}
+        onAlignLeft={() => updateTextAlign('left')}
+        onAlignCenter={() => updateTextAlign('center')}
+        onAlignRight={() => updateTextAlign('right')}
+        onColorChange={updateTextColor}
+        onFontSizeChange={updateFontSize}
+        onCopy={handleCopyElement}
+        onDelete={handleDeleteElement}
+        onAddAnimation={addAnimation}
+        currentColor={textColor}
+        currentFontSize={fontSize}
+        isBold={fontWeight === '700'}
+        isItalic={fontStyle === 'italic'}
+        isUnderline={textDecoration === 'underline'}
+      />
+      
+      {/* Selection Overlay */}
+      <SelectionOverlay element={selectedElement} iframeRef={iframeRef} />
+
       {/* Toolbar */}
       <div className="border-b bg-card">
         <div className="container mx-auto px-4 py-3">
@@ -453,6 +692,49 @@ const Editor = () => {
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Viewport Controls */}
+              <div className="flex items-center gap-1 border rounded-lg p-1">
+                <Button
+                  variant={viewport === 'desktop' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  onClick={() => setViewport('desktop')}
+                >
+                  <Monitor className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewport === 'tablet' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  onClick={() => setViewport('tablet')}
+                >
+                  <Tablet className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewport === 'mobile' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  onClick={() => setViewport('mobile')}
+                >
+                  <Smartphone className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <Separator orientation="vertical" className="h-6" />
+              
+              {/* Copy/Paste buttons */}
+              <Button variant="ghost" size="sm" onClick={handleCopyElement} disabled={!selectedElement}>
+                <Copy className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handlePasteElement} disabled={!clipboard}>
+                <Clipboard className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleDeleteElement} disabled={!selectedElement}>
+                <Trash2 className="w-4 h-4" />
+              </Button>
+              
+              <Separator orientation="vertical" className="h-6" />
+
               <Button variant="outline" size="sm" onClick={() => handleSave(true)}>
                 Save Draft
               </Button>
@@ -472,8 +754,11 @@ const Editor = () => {
       {/* Editor Layout */}
       <div className="flex-1 flex overflow-hidden">
         {/* Canvas */}
-        <div className="flex-1 p-4">
-          <Card className="h-full overflow-hidden">
+        <div className="flex-1 p-4 flex justify-center">
+          <Card 
+            className="h-full overflow-hidden transition-all duration-300"
+            style={{ width: viewportWidths[viewport], maxWidth: '100%' }}
+          >
             <iframe
               ref={iframeRef}
               className="w-full h-full border-0"
@@ -519,6 +804,9 @@ const Editor = () => {
               <div className="p-3 border-b">
                 <p className="text-sm text-muted-foreground">
                   {elementType === 'none' ? 'Click an element to edit' : `Editing ${elementType}`}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Double-click text to edit inline • Ctrl+C/V to copy/paste
                 </p>
               </div>
               
@@ -753,36 +1041,123 @@ const Editor = () => {
 
               <Separator />
 
-              <div className="flex items-center justify-between">
-                <Label>Autoplay</Label>
-                <Switch
-                  checked={videoAutoplay}
-                  onCheckedChange={updateVideoAutoplay}
-                />
+              {/* Poster Image */}
+              <div>
+                <Label>Poster Image</Label>
+                <p className="text-xs text-muted-foreground mt-1">Thumbnail before video plays</p>
+                <Button
+                  variant="outline"
+                  className="w-full mt-1.5"
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = (e) => handlePosterUpload(e as any);
+                    input.click();
+                  }}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Poster
+                </Button>
+                {videoPoster && (
+                  <div className="mt-2 relative">
+                    <img src={videoPoster} alt="Poster" className="w-full h-24 object-cover rounded" />
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-1 right-1 h-6 text-xs"
+                      onClick={() => updateVideoPoster("")}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                )}
               </div>
 
-              <div className="flex items-center justify-between">
-                <Label>Muted</Label>
-                <Switch
-                  checked={videoMuted}
-                  onCheckedChange={updateVideoMuted}
-                />
+              <Separator />
+
+              {/* Dimensions */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Width</Label>
+                  <Input
+                    type="text"
+                    value={videoWidth}
+                    onChange={(e) => updateVideoWidth(e.target.value)}
+                    placeholder="100%"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label>Height</Label>
+                  <Input
+                    type="text"
+                    value={videoHeight}
+                    onChange={(e) => updateVideoHeight(e.target.value)}
+                    placeholder="auto"
+                    className="mt-1"
+                  />
+                </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <Label>Loop</Label>
-                <Switch
-                  checked={videoLoop}
-                  onCheckedChange={updateVideoLoop}
-                />
+              <Separator />
+
+              {/* Playback Controls */}
+              <div className="space-y-3">
+                <Label className="text-xs font-medium text-muted-foreground uppercase">Playback</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Autoplay</Label>
+                  <Switch
+                    checked={videoAutoplay}
+                    onCheckedChange={updateVideoAutoplay}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Label>Muted</Label>
+                  <Switch
+                    checked={videoMuted}
+                    onCheckedChange={updateVideoMuted}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Label>Loop</Label>
+                  <Switch
+                    checked={videoLoop}
+                    onCheckedChange={updateVideoLoop}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Label>Show Controls</Label>
+                  <Switch
+                    checked={videoControls}
+                    onCheckedChange={updateVideoControls}
+                  />
+                </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <Label>Show Controls</Label>
-                <Switch
-                  checked={videoControls}
-                  onCheckedChange={updateVideoControls}
-                />
+              <Separator />
+
+              {/* Video Filters */}
+              <div>
+                <Label>Video Filter</Label>
+                <Select value={videoFilter} onValueChange={updateVideoFilter}>
+                  <SelectTrigger className="mt-1.5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="grayscale(100%)">Grayscale</SelectItem>
+                    <SelectItem value="sepia(100%)">Sepia</SelectItem>
+                    <SelectItem value="blur(2px)">Blur</SelectItem>
+                    <SelectItem value="brightness(1.2)">Brightness</SelectItem>
+                    <SelectItem value="contrast(1.2)">Contrast</SelectItem>
+                    <SelectItem value="saturate(1.5)">Saturate</SelectItem>
+                    <SelectItem value="sepia(50%) contrast(90%)">Vintage</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
                 </div>
               )}
