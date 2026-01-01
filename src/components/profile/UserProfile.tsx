@@ -13,6 +13,7 @@ import {
 import { userStorage, type User } from "@/lib/storage";
 import { webieStorage, type Webie } from "@/lib/webieStorage";
 import { followStorage } from "@/lib/followStorage";
+import { notificationStorage } from "@/lib/notificationStorage";
 import { toast } from "sonner";
 
 const UserProfile = () => {
@@ -55,6 +56,11 @@ const UserProfile = () => {
     } else {
       followStorage.follow(currentUser.id, profileUser.id);
       setIsFollowing(true);
+      // Send notification
+      notificationStorage.notifyFollow(
+        profileUser.id,
+        { id: currentUser.id, name: currentUser.name, avatar: currentUser.avatar }
+      );
       toast.success("Following!");
     }
   };
