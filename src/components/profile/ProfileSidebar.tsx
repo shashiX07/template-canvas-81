@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { userStorage } from "@/lib/storage";
 import { chatStorage } from "@/lib/chatStorage";
 import { useState, useEffect } from "react";
+import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 
 const menuItems = [
   { title: "Home", url: "/profile", icon: Home, end: true },
@@ -66,22 +67,30 @@ export function ProfileSidebar() {
             <Sparkles className="h-6 w-6 text-primary shrink-0" />
             {!isCollapsed && <span className="font-bold text-lg">Webie</span>}
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleSidebar}
-            className={cn(
-              "h-8 w-8 shrink-0",
-              isCollapsed && "absolute left-1/2 -translate-x-1/2 mt-2"
-            )}
-          >
-            {isCollapsed ? (
-              <PanelLeft className="h-4 w-4" />
-            ) : (
-              <PanelLeftClose className="h-4 w-4" />
-            )}
-          </Button>
+          <div className="flex items-center gap-1">
+            {!isCollapsed && <NotificationDropdown />}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className={cn(
+                "h-8 w-8 shrink-0",
+                isCollapsed && "absolute left-1/2 -translate-x-1/2 mt-2"
+              )}
+            >
+              {isCollapsed ? (
+                <PanelLeft className="h-4 w-4" />
+              ) : (
+                <PanelLeftClose className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
         </div>
+        {isCollapsed && (
+          <div className="flex justify-center mt-2">
+            <NotificationDropdown />
+          </div>
+        )}
       </div>
 
       <SidebarContent className="px-2 py-4">

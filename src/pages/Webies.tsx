@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { webieStorage, type Webie } from "@/lib/webieStorage";
 import { userStorage } from "@/lib/storage";
+import { notificationStorage } from "@/lib/notificationStorage";
 import { toast } from "sonner";
 
 const Webies = () => {
@@ -55,7 +56,18 @@ const Webies = () => {
       navigate("/auth");
       return;
     }
+    const webie = webies.find(w => w.id === webieId);
+    const wasLiked = webie?.likes.includes(currentUser.id);
     webieStorage.toggleLike(webieId, currentUser.id);
+    // Send notification if liking (not unliking)
+    if (webie && !wasLiked && webie.userId !== currentUser.id) {
+      notificationStorage.notifyLike(
+        webie.userId,
+        { id: currentUser.id, name: currentUser.name, avatar: currentUser.avatar },
+        webie.id,
+        webie.title
+      );
+    }
     loadWebies();
   };
 

@@ -38,6 +38,7 @@ import {
 import { webieStorage, type Webie, type WebieComment, type WebieReply } from "@/lib/webieStorage";
 import { userStorage } from "@/lib/storage";
 import { savedWebieStorage } from "@/lib/followStorage";
+import { notificationStorage } from "@/lib/notificationStorage";
 import { toast } from "sonner";
 
 const WebieDetail = () => {
@@ -129,7 +130,17 @@ const WebieDetail = () => {
       return;
     }
     if (webie) {
+      const wasLiked = webie.likes.includes(currentUser.id);
       webieStorage.toggleLike(webie.id, currentUser.id);
+      // Notify owner if liking (not unliking)
+      if (!wasLiked && webie.userId !== currentUser.id) {
+        notificationStorage.notifyLike(
+          webie.userId,
+          { id: currentUser.id, name: currentUser.name, avatar: currentUser.avatar },
+          webie.id,
+          webie.title
+        );
+      }
       setWebie(webieStorage.getById(webie.id));
     }
   };
@@ -170,7 +181,7 @@ const WebieDetail = () => {
       navigate("/auth");
       return;
     }
-    if (!newComment.trim()) return;
+    if (!newComment.trim() || !webie) return;
 
     const comment: WebieComment = {
       id: `comment-${Date.now()}`,
@@ -183,8 +194,18 @@ const WebieDetail = () => {
       createdAt: new Date().toISOString(),
     };
 
-    webieStorage.addComment(webie!.id, comment);
-    setWebie(webieStorage.getById(webie!.id));
+    webieStorage.addComment(webie.id, comment);
+    // Notify webie owner
+    if (webie.userId !== currentUser.id) {
+      notificationStorage.notifyComment(
+        webie.userId,
+        { id: currentUser.id, name: currentUser.name, avatar: currentUser.avatar },
+        webie.id,
+        webie.title,
+        newComment.trim()
+      );
+    }
+    setWebie(webieStorage.getById(webie.id));
     setNewComment("");
     toast.success("Comment added");
   };
@@ -194,7 +215,7 @@ const WebieDetail = () => {
       toast.error("Please login to reply");
       return;
     }
-    if (!replyContent.trim()) return;
+    if (!replyContent.trim() || !webie) return;
 
     const reply: WebieReply = {
       id: `reply-${Date.now()}`,
@@ -205,8 +226,19 @@ const WebieDetail = () => {
       createdAt: new Date().toISOString(),
     };
 
-    webieStorage.addReply(webie!.id, commentId, reply);
-    setWebie(webieStorage.getById(webie!.id));
+    // Find the comment owner to notify
+    const comment = webie.comments.find(c => c.id === commentId);
+    webieStorage.addReply(webie.id, commentId, reply);
+    // Notify comment owner
+    if (comment && comment.userId !== currentUser.id) {
+      notificationStorage.notifyReply(
+        comment.userId,
+        { id: currentUser.id, name: currentUser.name, avatar: currentUser.avatar },
+        webie.id,
+        replyContent.trim()
+      );
+    }
+    setWebie(webieStorage.getById(webie.id));
     setReplyContent("");
     setReplyingTo(null);
     setExpandedReplies(prev => new Set(prev).add(commentId));
