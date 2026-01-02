@@ -6,18 +6,19 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Key, Smartphone, Settings, Lock } from "lucide-react";
+import { Shield, Key, Smartphone, Settings, Lock, Moon, Sun, Monitor } from "lucide-react";
 import { userStorage } from "@/lib/storage";
 import { toast } from "sonner";
 import { useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+import { useTheme } from "@/hooks/useTheme";
 
 export function ProfileSettings() {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const defaultTab = searchParams.get("tab") || "preferences";
   const [activeTab, setActiveTab] = useState(defaultTab);
   const user = userStorage.getCurrentUser();
+  const { theme, setTheme, isDark } = useTheme();
 
   const handleToggle2FA = () => {
     if (user) {
@@ -77,18 +78,55 @@ export function ProfileSettings() {
                   <Switch />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <Label>Theme</Label>
-                  <Select defaultValue="system">
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="light">Light</SelectItem>
-                      <SelectItem value="dark">Dark</SelectItem>
-                      <SelectItem value="system">System</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => setTheme("light")}
+                      className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                        theme === "light" 
+                          ? "border-primary bg-primary/10" 
+                          : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      <Sun className="w-6 h-6" />
+                      <span className="text-sm font-medium">Light</span>
+                    </button>
+                    <button
+                      onClick={() => setTheme("dark")}
+                      className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                        theme === "dark" 
+                          ? "border-primary bg-primary/10" 
+                          : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      <Moon className="w-6 h-6" />
+                      <span className="text-sm font-medium">Dark</span>
+                    </button>
+                    <button
+                      onClick={() => setTheme("system")}
+                      className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                        theme === "system" 
+                          ? "border-primary bg-primary/10" 
+                          : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      <Monitor className="w-6 h-6" />
+                      <span className="text-sm font-medium">System</span>
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between pt-2">
+                    <div className="space-y-0.5">
+                      <Label>Quick Toggle</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Switch between light and dark mode
+                      </p>
+                    </div>
+                    <Switch
+                      checked={isDark}
+                      onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
