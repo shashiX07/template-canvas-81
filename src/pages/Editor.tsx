@@ -10,12 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Download, ArrowLeft, Upload, Settings, Plus, Copy, Clipboard, Trash2, Monitor, Tablet, Smartphone } from "lucide-react";
+import { Save, Download, ArrowLeft, Upload, Settings, Plus, Copy, Clipboard, Trash2, Monitor, Tablet, Smartphone, Undo2, Redo2, Layers, ZoomIn, ZoomOut, Maximize } from "lucide-react";
 import { templateStorage, customizedTemplateStorage, userStorage, type Template, type CustomizedTemplate } from "@/lib/storage";
 import { toast } from "sonner";
 import { DraggableElements } from "@/components/editor/DraggableElements";
 import { FloatingToolbar } from "@/components/editor/FloatingToolbar";
 import { SelectionOverlay } from "@/components/editor/SelectionOverlay";
+import { LayersPanel } from "@/components/editor/LayersPanel";
+import { useEditorHistory } from "@/hooks/useEditorHistory";
 
 type ElementType = 'text' | 'image' | 'video' | 'container' | 'none';
 
@@ -73,6 +75,10 @@ const Editor = () => {
   
   // Viewport preview
   const [viewport, setViewport] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [zoom, setZoom] = useState(100);
+  
+  // Undo/Redo history
+  const { pushState, undo, redo, canUndo, canRedo } = useEditorHistory();
   
   // Text properties
   const [textContent, setTextContent] = useState("");
@@ -203,14 +209,20 @@ const Editor = () => {
           }
         });
 
-        // Keyboard shortcuts for copy/paste
+        // Keyboard shortcuts for copy/paste/undo/redo
         iframeDoc.addEventListener('keydown', (e) => {
-          if ((e.ctrlKey || e.metaKey) && selectedElement) {
-            if (e.key === 'c') {
+          if (e.ctrlKey || e.metaKey) {
+            if (e.key === 'c' && selectedElement) {
               handleCopyElement();
             } else if (e.key === 'v') {
               handlePasteElement();
-            } else if (e.key === 'Delete' || e.key === 'Backspace') {
+            } else if (e.key === 'z' && !e.shiftKey) {
+              e.preventDefault();
+              handleUndo();
+            } else if ((e.key === 'z' && e.shiftKey) || e.key === 'y') {
+              e.preventDefault();
+              handleRedo();
+            } else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedElement) {
               handleDeleteElement();
             }
           }
@@ -393,13 +405,31 @@ const Editor = () => {
 
   const handleDeleteElement = useCallback(() => {
     if (selectedElement && selectedElement.parentElement) {
+      pushState(iframeRef.current?.contentDocument?.documentElement.outerHTML || '');
       selectedElement.remove();
       setSelectedElement(null);
       setElementType('none');
       setShowToolbar(false);
       toast.success("Element deleted");
     }
-  }, [selectedElement]);
+  }, [selectedElement, pushState]);
+
+  // Undo/Redo handlers
+  const handleUndo = useCallback(() => {
+    const html = undo();
+    if (html && iframeRef.current?.contentDocument) {
+      setHtmlContent(html);
+      toast.success("Undo");
+    }
+  }, [undo]);
+
+  const handleRedo = useCallback(() => {
+    const html = redo();
+    if (html && iframeRef.current?.contentDocument) {
+      setHtmlContent(html);
+      toast.success("Redo");
+    }
+  }, [redo]);
 
   // Memoized real-time update handlers
   const updateTextContent = useCallback((value: string) => {
@@ -729,6 +759,16 @@ const Editor = () => {
               
               <Separator orientation="vertical" className="h-6" />
               
+              {/* Undo/Redo */}
+              <Button variant="ghost" size="sm" onClick={handleUndo} disabled={!canUndo} title="Undo (Ctrl+Z)">
+                <Undo2 className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleRedo} disabled={!canRedo} title="Redo (Ctrl+Shift+Z)">
+                <Redo2 className="w-4 h-4" />
+              </Button>
+              
+              <Separator orientation="vertical" className="h-6" />
+              
               {/* Copy/Paste buttons */}
               <Button variant="ghost" size="sm" onClick={handleCopyElement} disabled={!selectedElement}>
                 <Copy className="w-4 h-4" />
@@ -778,14 +818,18 @@ const Editor = () => {
         <div className="w-80 border-l bg-card flex flex-col">
           <Tabs defaultValue="properties" className="flex-1 flex flex-col">
             <div className="p-3 border-b flex-shrink-0">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="properties" className="gap-1.5 text-xs">
                   <Settings className="w-3.5 h-3.5" />
-                  Properties
+                  Props
                 </TabsTrigger>
                 <TabsTrigger value="elements" className="gap-1.5 text-xs">
                   <Plus className="w-3.5 h-3.5" />
-                  Elements
+                  Add
+                </TabsTrigger>
+                <TabsTrigger value="layers" className="gap-1.5 text-xs">
+                  <Layers className="w-3.5 h-3.5" />
+                  Layers
                 </TabsTrigger>
               </TabsList>
             </div>
