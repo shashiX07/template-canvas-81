@@ -165,7 +165,6 @@ const Editor = () => {
       e.preventDefault();
       e.dataTransfer!.dropEffect = 'copy';
       const target = iframeDoc.elementFromPoint(e.clientX, e.clientY) as HTMLElement;
-      // Remove previous drop targets
       iframeDoc.querySelectorAll('.editor-drop-target').forEach(el => el.classList.remove('editor-drop-target'));
       if (target && target !== iframeDoc.body) {
         target.classList.add('editor-drop-target');
@@ -181,17 +180,20 @@ const Editor = () => {
       iframeDoc.querySelectorAll('.editor-drop-target').forEach(el => el.classList.remove('editor-drop-target'));
       const html = e.dataTransfer?.getData('text/html');
       if (html) {
+        pushState(iframeDoc.documentElement.outerHTML);
         const wrapper = iframeDoc.createElement('div');
         wrapper.innerHTML = html;
         const element = wrapper.firstElementChild;
         if (element) {
-          const target = iframeDoc.elementFromPoint(e.clientX, e.clientY);
-          if (target && target !== iframeDoc.body) {
-            target.parentElement?.insertBefore(element, target.nextSibling);
+          const target = iframeDoc.elementFromPoint(e.clientX, e.clientY) as HTMLElement;
+          if (target && target !== iframeDoc.body && target !== iframeDoc.documentElement) {
+            // Insert after the closest top-level or block-level parent
+            const insertTarget = target.closest('section, nav, footer, header, div, form') || target;
+            insertTarget.parentElement?.insertBefore(element, insertTarget.nextSibling);
           } else {
             iframeDoc.body.appendChild(element);
           }
-          toast.success("Element added");
+          toast.success("Element added to canvas");
         }
       }
     });
@@ -209,79 +211,85 @@ const Editor = () => {
       }
     });
 
-    // Element interactions
-    const allElements = iframeDoc.body.querySelectorAll('*');
-    allElements.forEach((el) => {
-      const element = el as HTMLElement;
-      
-      element.addEventListener('mouseenter', () => {
-        if (element !== selectedElement && !isInlineEditing) {
-          element.classList.add('editor-hover');
-        }
-      });
-      
-      element.addEventListener('mouseleave', () => {
-        element.classList.remove('editor-hover');
-      });
-      
-      // Double-click for inline editing
-      element.addEventListener('dblclick', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const tagName = element.tagName.toLowerCase();
-        if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'a', 'button', 'li', 'td', 'th', 'label'].includes(tagName) || 
-            (element.childNodes.length === 1 && element.childNodes[0].nodeType === Node.TEXT_NODE)) {
-          setIsInlineEditing(true);
-          element.contentEditable = 'true';
-          element.style.cursor = 'text';
-          element.focus();
-          const range = iframeDoc.createRange();
-          range.selectNodeContents(element);
-          const selection = iframeDoc.getSelection();
-          selection?.removeAllRanges();
-          selection?.addRange(range);
-          const handleBlur = () => {
-            element.contentEditable = 'false';
-            element.style.cursor = '';
-            setIsInlineEditing(false);
-            setTextContent(element.innerText || "");
-            element.removeEventListener('blur', handleBlur);
-          };
-          element.addEventListener('blur', handleBlur);
-        }
-      });
-      
-      element.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (isInlineEditing) return;
-        
-        // Remove previous selection
-        iframeDoc.querySelectorAll('.editor-selected').forEach(el => el.classList.remove('editor-selected'));
-        
-        setSelectedElement(element);
-        element.classList.add('editor-selected');
-        element.classList.remove('editor-hover');
-        
-        // Toolbar position
-        const rect = element.getBoundingClientRect();
-        const iframeRect = iframe.getBoundingClientRect();
-        setToolbarPosition({
-          x: iframeRect.left + rect.left + rect.width / 2,
-          y: iframeRect.top + rect.top,
-        });
-        setShowToolbar(true);
-        detectElementType(element);
-      });
+    // --- EVENT DELEGATION: handles ALL elements including newly added ones ---
+    let hoveredElement: HTMLElement | null = null;
+
+    iframeDoc.body.addEventListener('mouseover', (e) => {
+      const target = e.target as HTMLElement;
+      if (target === iframeDoc.body || target === iframeDoc.documentElement) return;
+      if (target.classList.contains('editor-selected')) return;
+      // Remove previous hover
+      if (hoveredElement && hoveredElement !== target) {
+        hoveredElement.classList.remove('editor-hover');
+      }
+      target.classList.add('editor-hover');
+      hoveredElement = target;
     });
-    
-    // Click body to deselect
-    iframeDoc.addEventListener('click', (e) => {
-      if (e.target === iframeDoc.body) {
+
+    iframeDoc.body.addEventListener('mouseout', (e) => {
+      const target = e.target as HTMLElement;
+      target.classList.remove('editor-hover');
+      if (hoveredElement === target) hoveredElement = null;
+    });
+
+    iframeDoc.body.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      e.preventDefault();
+
+      // Click on body = deselect
+      if (target === iframeDoc.body || target === iframeDoc.documentElement) {
         iframeDoc.querySelectorAll('.editor-selected').forEach(el => el.classList.remove('editor-selected'));
         setSelectedElement(null);
         setElementType('none');
         setShowToolbar(false);
+        return;
+      }
+
+      if (isInlineEditing) return;
+
+      // Remove previous selection
+      iframeDoc.querySelectorAll('.editor-selected').forEach(el => el.classList.remove('editor-selected'));
+
+      setSelectedElement(target);
+      target.classList.add('editor-selected');
+      target.classList.remove('editor-hover');
+
+      // Toolbar position
+      const rect = target.getBoundingClientRect();
+      const iframeRect = iframe.getBoundingClientRect();
+      setToolbarPosition({
+        x: iframeRect.left + rect.left + rect.width / 2,
+        y: iframeRect.top + rect.top,
+      });
+      setShowToolbar(true);
+      detectElementType(target);
+    });
+
+    iframeDoc.body.addEventListener('dblclick', (e) => {
+      e.preventDefault();
+      const element = e.target as HTMLElement;
+      if (element === iframeDoc.body || element === iframeDoc.documentElement) return;
+
+      const tagName = element.tagName.toLowerCase();
+      if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'a', 'button', 'li', 'td', 'th', 'label'].includes(tagName) ||
+          (element.childNodes.length === 1 && element.childNodes[0].nodeType === Node.TEXT_NODE)) {
+        setIsInlineEditing(true);
+        element.contentEditable = 'true';
+        element.style.cursor = 'text';
+        element.focus();
+        const range = iframeDoc.createRange();
+        range.selectNodeContents(element);
+        const selection = iframeDoc.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+        const handleBlur = () => {
+          element.contentEditable = 'false';
+          element.style.cursor = '';
+          setIsInlineEditing(false);
+          setTextContent(element.innerText || "");
+          element.removeEventListener('blur', handleBlur);
+        };
+        element.addEventListener('blur', handleBlur);
       }
     });
   }, [htmlContent, template]);
@@ -628,10 +636,31 @@ const Editor = () => {
                 onElementDrop={(html) => {
                   if (iframeRef.current?.contentDocument) {
                     const doc = iframeRef.current.contentDocument;
+                    pushState(doc.documentElement.outerHTML);
                     const wrapper = doc.createElement('div');
                     wrapper.innerHTML = html;
                     const element = wrapper.firstElementChild;
-                    if (element) { doc.body.appendChild(element); toast.success("Element added"); }
+                    if (element) {
+                      // Insert after selected element, or at end of body
+                      if (selectedElement && selectedElement.parentElement) {
+                        selectedElement.parentElement.insertBefore(element, selectedElement.nextSibling);
+                      } else {
+                        doc.body.appendChild(element);
+                      }
+                      // Auto-select the new element
+                      doc.querySelectorAll('.editor-selected').forEach(el => el.classList.remove('editor-selected'));
+                      (element as HTMLElement).classList.add('editor-selected');
+                      setSelectedElement(element as HTMLElement);
+                      detectElementType(element as HTMLElement);
+                      setShowToolbar(true);
+                      const rect = (element as HTMLElement).getBoundingClientRect();
+                      const iframeRect = iframeRef.current!.getBoundingClientRect();
+                      setToolbarPosition({
+                        x: iframeRect.left + rect.left + rect.width / 2,
+                        y: iframeRect.top + rect.top,
+                      });
+                      toast.success("Element added");
+                    }
                   }
                 }}
               />
