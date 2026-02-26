@@ -50,6 +50,8 @@ const Editor = () => {
   const [elementType, setElementType] = useState<ElementType>('none');
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const selectedElementRef = useRef<HTMLElement | null>(null);
+  const isInlineEditingRef = useRef(false);
   
   const [clipboard, setClipboard] = useState<string | null>(null);
   const [toolbarPosition, setToolbarPosition] = useState({ x: 0, y: 0 });
@@ -90,6 +92,10 @@ const Editor = () => {
   const [videoHeight, setVideoHeight] = useState("auto");
   const [videoPoster, setVideoPoster] = useState("");
   const [videoFilter, setVideoFilter] = useState("none");
+
+  // Keep refs in sync with state
+  useEffect(() => { selectedElementRef.current = selectedElement; }, [selectedElement]);
+  useEffect(() => { isInlineEditingRef.current = isInlineEditing; }, [isInlineEditing]);
 
   // Load template
   useEffect(() => {
@@ -200,31 +206,33 @@ const Editor = () => {
 
     // Keyboard shortcuts
     iframeDoc.addEventListener('keydown', (e) => {
+      const sel = selectedElementRef.current;
+      const inlineEditing = isInlineEditingRef.current;
       if (e.ctrlKey || e.metaKey) {
-        if (e.key === 'c' && selectedElement) handleCopyElement();
+        if (e.key === 'c' && sel) handleCopyElement();
         else if (e.key === 'v') handlePasteElement();
         else if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); handleUndo(); }
         else if ((e.key === 'z' && e.shiftKey) || e.key === 'y') { e.preventDefault(); handleRedo(); }
       }
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedElement && !isInlineEditing) {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && sel && !inlineEditing) {
         handleDeleteElement();
       }
       // Alt+Up/Down to move selected element in DOM order
-      if (e.altKey && selectedElement && !isInlineEditing) {
+      if (e.altKey && sel && !inlineEditing) {
         if (e.key === 'ArrowUp') {
           e.preventDefault();
-          const prev = selectedElement.previousElementSibling;
+          const prev = sel.previousElementSibling;
           if (prev) {
             pushState(iframeDoc.documentElement.outerHTML);
-            selectedElement.parentElement?.insertBefore(selectedElement, prev);
+            sel.parentElement?.insertBefore(sel, prev);
             toast.success("Moved up");
           }
         } else if (e.key === 'ArrowDown') {
           e.preventDefault();
-          const next = selectedElement.nextElementSibling;
+          const next = sel.nextElementSibling;
           if (next) {
             pushState(iframeDoc.documentElement.outerHTML);
-            next.parentElement?.insertBefore(selectedElement, next.nextSibling);
+            next.parentElement?.insertBefore(sel, next.nextSibling);
             toast.success("Moved down");
           }
         }
