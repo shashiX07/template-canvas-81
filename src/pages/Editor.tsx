@@ -209,6 +209,26 @@ const Editor = () => {
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedElement && !isInlineEditing) {
         handleDeleteElement();
       }
+      // Alt+Up/Down to move selected element in DOM order
+      if (e.altKey && selectedElement && !isInlineEditing) {
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          const prev = selectedElement.previousElementSibling;
+          if (prev) {
+            pushState(iframeDoc.documentElement.outerHTML);
+            selectedElement.parentElement?.insertBefore(selectedElement, prev);
+            toast.success("Moved up");
+          }
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          const next = selectedElement.nextElementSibling;
+          if (next) {
+            pushState(iframeDoc.documentElement.outerHTML);
+            next.parentElement?.insertBefore(selectedElement, next.nextSibling);
+            toast.success("Moved down");
+          }
+        }
+      }
     });
 
     // --- EVENT DELEGATION: handles ALL elements including newly added ones ---
