@@ -22,6 +22,7 @@ import { GridOverlay } from "@/components/editor/GridOverlay";
 import { ResizeHandles } from "@/components/editor/ResizeHandles";
 import { useEditorHistory } from "@/hooks/useEditorHistory";
 import { useCanvasZoom } from "@/hooks/useCanvasZoom";
+import { structuredToHtml, htmlToStructured, type StructuredTemplate } from "@/lib/templateJsonConverter";
 
 type ElementType = 'text' | 'image' | 'video' | 'container' | 'none';
 
@@ -103,7 +104,13 @@ const Editor = () => {
       const found = templateStorage.getById(id);
       if (found) {
         setTemplate(found);
-        setHtmlContent(found.htmlContent);
+        // If structured JSON data exists, convert to HTML for the editor
+        if (found.structuredData) {
+          const html = structuredToHtml(found.structuredData);
+          setHtmlContent(html);
+        } else {
+          setHtmlContent(found.htmlContent);
+        }
       } else {
         toast.error("Template not found");
         navigate("/templates");
@@ -124,11 +131,15 @@ const Editor = () => {
     let completeHtml = htmlContent;
     completeHtml = completeHtml.replace('</head>', `<style>${animationStyles}</style>\n</head>`);
     
-    if (template.cssFiles) {
+    // Only inject separate CSS/JS/assets if NOT using structured format
+    // (structuredToHtml already inlines everything)
+    const isStructured = !!template.structuredData;
+    
+    if (!isStructured && template.cssFiles) {
       const cssInjects = Object.entries(template.cssFiles).map(([_, content]) => `<style>${content}</style>`).join('\n');
       completeHtml = completeHtml.replace('</head>', `${cssInjects}\n</head>`);
     }
-    if (template.jsFiles) {
+    if (!isStructured && template.jsFiles) {
       const jsInjects = Object.entries(template.jsFiles).map(([_, content]) => `<script>${content}</script>`).join('\n');
       completeHtml = completeHtml.replace('</body>', `${jsInjects}\n</body>`);
     }
@@ -457,12 +468,24 @@ const Editor = () => {
     const user = userStorage.getCurrentUser();
     if (!user) { toast.error("Please log in to save"); return; }
     const currentHtml = iframeRef.current?.contentDocument?.documentElement.outerHTML || htmlContent;
+    
+    // Convert current HTML back to structured JSON for persistence
+    const structured = htmlToStructured(currentHtml);
+    
     const customized: CustomizedTemplate = {
       id: `custom-${Date.now()}`, userId: user.id, templateId: template?.id || "",
-      customizedHtml: currentHtml, customData: {}, isDraft,
+      customizedHtml: currentHtml, customData: { structuredData: structured }, isDraft,
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     };
     customizedTemplateStorage.save(customized);
+    
+    // Also update the template's structured data
+    if (template) {
+      const updatedTemplate = { ...template, structuredData: structured, htmlContent: currentHtml, updatedAt: new Date().toISOString() };
+      templateStorage.save(updatedTemplate);
+      setTemplate(updatedTemplate);
+    }
+    
     if (isDraft) { if (!user.draftTemplates.includes(customized.id)) user.draftTemplates.push(customized.id); }
     else { if (!user.customizedTemplates.includes(customized.id)) user.customizedTemplates.push(customized.id); }
     userStorage.save(user);
@@ -476,7 +499,16 @@ const Editor = () => {
     const a = document.createElement('a');
     a.href = url; a.download = `${template?.title || 'template'}.html`; a.click();
     URL.revokeObjectURL(url);
-    toast.success("Template downloaded");
+    
+    // Also offer structured JSON download
+    const structured = htmlToStructured(currentHtml);
+    const jsonBlob = new Blob([JSON.stringify(structured, null, 2)], { type: 'application/json' });
+    const jsonUrl = URL.createObjectURL(jsonBlob);
+    const jsonA = document.createElement('a');
+    jsonA.href = jsonUrl; jsonA.download = `${template?.title || 'template'}.json`; jsonA.click();
+    URL.revokeObjectURL(jsonUrl);
+    
+    toast.success("Template downloaded (HTML + JSON)");
   };
 
   if (!template) {
