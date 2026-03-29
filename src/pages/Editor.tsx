@@ -22,6 +22,7 @@ import { GridOverlay } from "@/components/editor/GridOverlay";
 import { ResizeHandles } from "@/components/editor/ResizeHandles";
 import { useEditorHistory } from "@/hooks/useEditorHistory";
 import { useCanvasZoom } from "@/hooks/useCanvasZoom";
+import { structuredToHtml, htmlToStructured, type StructuredTemplate } from "@/lib/templateJsonConverter";
 
 type ElementType = 'text' | 'image' | 'video' | 'container' | 'none';
 
