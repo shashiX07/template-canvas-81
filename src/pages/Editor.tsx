@@ -131,11 +131,15 @@ const Editor = () => {
     let completeHtml = htmlContent;
     completeHtml = completeHtml.replace('</head>', `<style>${animationStyles}</style>\n</head>`);
     
-    if (template.cssFiles) {
+    // Only inject separate CSS/JS/assets if NOT using structured format
+    // (structuredToHtml already inlines everything)
+    const isStructured = !!template.structuredData;
+    
+    if (!isStructured && template.cssFiles) {
       const cssInjects = Object.entries(template.cssFiles).map(([_, content]) => `<style>${content}</style>`).join('\n');
       completeHtml = completeHtml.replace('</head>', `${cssInjects}\n</head>`);
     }
-    if (template.jsFiles) {
+    if (!isStructured && template.jsFiles) {
       const jsInjects = Object.entries(template.jsFiles).map(([_, content]) => `<script>${content}</script>`).join('\n');
       completeHtml = completeHtml.replace('</body>', `${jsInjects}\n</body>`);
     }
