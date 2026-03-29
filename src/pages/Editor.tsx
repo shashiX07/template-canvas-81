@@ -464,12 +464,24 @@ const Editor = () => {
     const user = userStorage.getCurrentUser();
     if (!user) { toast.error("Please log in to save"); return; }
     const currentHtml = iframeRef.current?.contentDocument?.documentElement.outerHTML || htmlContent;
+    
+    // Convert current HTML back to structured JSON for persistence
+    const structured = htmlToStructured(currentHtml);
+    
     const customized: CustomizedTemplate = {
       id: `custom-${Date.now()}`, userId: user.id, templateId: template?.id || "",
-      customizedHtml: currentHtml, customData: {}, isDraft,
+      customizedHtml: currentHtml, customData: { structuredData: structured }, isDraft,
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     };
     customizedTemplateStorage.save(customized);
+    
+    // Also update the template's structured data
+    if (template) {
+      const updatedTemplate = { ...template, structuredData: structured, htmlContent: currentHtml, updatedAt: new Date().toISOString() };
+      templateStorage.save(updatedTemplate);
+      setTemplate(updatedTemplate);
+    }
+    
     if (isDraft) { if (!user.draftTemplates.includes(customized.id)) user.draftTemplates.push(customized.id); }
     else { if (!user.customizedTemplates.includes(customized.id)) user.customizedTemplates.push(customized.id); }
     userStorage.save(user);
@@ -483,7 +495,16 @@ const Editor = () => {
     const a = document.createElement('a');
     a.href = url; a.download = `${template?.title || 'template'}.html`; a.click();
     URL.revokeObjectURL(url);
-    toast.success("Template downloaded");
+    
+    // Also offer structured JSON download
+    const structured = htmlToStructured(currentHtml);
+    const jsonBlob = new Blob([JSON.stringify(structured, null, 2)], { type: 'application/json' });
+    const jsonUrl = URL.createObjectURL(jsonBlob);
+    const jsonA = document.createElement('a');
+    jsonA.href = jsonUrl; jsonA.download = `${template?.title || 'template'}.json`; jsonA.click();
+    URL.revokeObjectURL(jsonUrl);
+    
+    toast.success("Template downloaded (HTML + JSON)");
   };
 
   if (!template) {
