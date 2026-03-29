@@ -104,7 +104,13 @@ const Editor = () => {
       const found = templateStorage.getById(id);
       if (found) {
         setTemplate(found);
-        setHtmlContent(found.htmlContent);
+        // If structured JSON data exists, convert to HTML for the editor
+        if (found.structuredData) {
+          const html = structuredToHtml(found.structuredData);
+          setHtmlContent(html);
+        } else {
+          setHtmlContent(found.htmlContent);
+        }
       } else {
         toast.error("Template not found");
         navigate("/templates");
