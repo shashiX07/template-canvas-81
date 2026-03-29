@@ -13,6 +13,8 @@ export interface Template {
   cssFiles?: Record<string, string>;
   jsFiles?: Record<string, string>;
   assets?: Record<string, string>;
+  /** Structured JSON representation from backend (dom/css/js) */
+  structuredData?: import('./templateJsonConverter').StructuredTemplate;
   isPublic: boolean;
   isPremium: boolean;
   createdAt: string;
