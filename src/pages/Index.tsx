@@ -212,7 +212,7 @@ const Index = () => {
                   animate={{ y: [0, -6, 0] }}
                   transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                 >
-                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
                   <span className="text-xs font-medium text-foreground">Live Preview Active</span>
                 </motion.div>
               </motion.div>
