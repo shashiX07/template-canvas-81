@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Sparkles, Palette, Zap, Shield, ArrowRight, Check, Users, Clock,
   TrendingUp, Play, ChevronDown, MousePointer2, Layers, Eye, Wand2,
-  Globe, ArrowUpRight, Code2, Grip, Heart
+  Globe, ArrowUpRight, Code2, Grip, Heart, Star, Rocket, Target
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { initializeMockData } from "@/lib/storage";
 import {
   motion, useScroll, useTransform, useInView,
-  useSpring, useMotionValue, AnimatePresence
+  useSpring, useMotionValue, useMotionValueEvent
 } from "framer-motion";
 
 import heroEditor from "@/assets/hero-editor-3d.jpg";
@@ -21,43 +21,38 @@ import showcaseBirthday from "@/assets/showcase-birthday.jpg";
 import showcaseAnniversary from "@/assets/showcase-anniversary.jpg";
 import showcaseBusiness from "@/assets/showcase-business.jpg";
 
-// ====== ANIMATED COUNTER ======
+/* ═══════════════════════════════════════════
+   REUSABLE MOTION COMPONENTS
+   ═══════════════════════════════════════════ */
+
 const AnimatedCounter = ({ target, suffix = "" }: { target: number; suffix?: string }) => {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true });
   const [count, setCount] = useState(0);
-
   useEffect(() => {
     if (!inView) return;
     let start = 0;
-    const duration = 2000;
-    const step = target / (duration / 16);
+    const step = target / 125;
     const timer = setInterval(() => {
       start += step;
-      if (start >= target) {
-        setCount(target);
-        clearInterval(timer);
-      } else {
-        setCount(Math.floor(start));
-      }
+      if (start >= target) { setCount(target); clearInterval(timer); }
+      else setCount(Math.floor(start));
     }, 16);
     return () => clearInterval(timer);
   }, [inView, target]);
-
   return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
 };
 
-// ====== TEXT REVEAL ======
-const TextReveal = ({ children, className = "" }: { children: string; className?: string }) => {
+const RevealText = ({ children, className = "", delay = 0 }: { children: string; className?: string; delay?: number }) => {
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
-
+  const inView = useInView(ref, { once: true, margin: "-60px" });
   return (
     <div ref={ref} className={`overflow-hidden ${className}`}>
       <motion.div
-        initial={{ y: "100%" }}
-        animate={inView ? { y: 0 } : { y: "100%" }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        initial={{ y: "110%", rotateX: 40 }}
+        animate={inView ? { y: 0, rotateX: 0 } : {}}
+        transition={{ duration: 0.9, delay, ease: [0.16, 1, 0.3, 1] }}
+        style={{ transformOrigin: "bottom" }}
       >
         {children}
       </motion.div>
@@ -65,7 +60,22 @@ const TextReveal = ({ children, className = "" }: { children: string; className?
   );
 };
 
-// ====== MAGNETIC BUTTON ======
+const FadeUp = ({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+  return (
+    <motion.div
+      ref={ref}
+      className={className}
+      initial={{ opacity: 0, y: 50 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
 const MagneticButton = ({ children, onClick, className = "" }: {
   children: React.ReactNode; onClick?: () => void; className?: string;
 }) => {
@@ -74,20 +84,17 @@ const MagneticButton = ({ children, onClick, className = "" }: {
   const y = useMotionValue(0);
   const springX = useSpring(x, { stiffness: 200, damping: 20 });
   const springY = useSpring(y, { stiffness: 200, damping: 20 });
-
-  const handleMouse = useCallback((e: React.MouseEvent) => {
-    const rect = ref.current?.getBoundingClientRect();
-    if (!rect) return;
-    x.set((e.clientX - rect.left - rect.width / 2) * 0.15);
-    y.set((e.clientY - rect.top - rect.height / 2) * 0.15);
-  }, [x, y]);
-
   return (
     <motion.button
       ref={ref}
       className={className}
       style={{ x: springX, y: springY }}
-      onMouseMove={handleMouse}
+      onMouseMove={(e) => {
+        const rect = ref.current?.getBoundingClientRect();
+        if (!rect) return;
+        x.set((e.clientX - rect.left - rect.width / 2) * 0.12);
+        y.set((e.clientY - rect.top - rect.height / 2) * 0.12);
+      }}
       onMouseLeave={() => { x.set(0); y.set(0); }}
       onClick={onClick}
       whileTap={{ scale: 0.97 }}
@@ -97,28 +104,23 @@ const MagneticButton = ({ children, onClick, className = "" }: {
   );
 };
 
-// ====== PARALLAX IMAGE ======
-const ParallaxImage = ({ src, alt, speed = 0.2, className = "" }: {
-  src: string; alt: string; speed?: number; className?: string;
-}) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const y = useTransform(scrollYProgress, [0, 1], [`-${speed * 100}px`, `${speed * 100}px`]);
+/* Infinite scroll marquee */
+const Marquee = ({ children, speed = 30, className = "" }: { children: React.ReactNode; speed?: number; className?: string }) => (
+  <div className={`overflow-hidden whitespace-nowrap ${className}`}>
+    <motion.div
+      className="flex gap-12 w-max"
+      animate={{ x: ["0%", "-50%"] }}
+      transition={{ duration: speed, repeat: Infinity, ease: "linear" }}
+    >
+      {children}
+      {children}
+    </motion.div>
+  </div>
+);
 
-  return (
-    <div ref={ref} className={`overflow-hidden ${className}`}>
-      <motion.img
-        src={src}
-        alt={alt}
-        className="w-full h-[120%] object-cover"
-        style={{ y }}
-        loading="lazy"
-        width={1920}
-        height={1080}
-      />
-    </div>
-  );
-};
+/* ═══════════════════════════════════════════
+   PAGE
+   ═══════════════════════════════════════════ */
 
 const Index = () => {
   const navigate = useNavigate();
@@ -126,21 +128,14 @@ const Index = () => {
   const heroRef = useRef<HTMLDivElement>(null);
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
 
-  const { scrollYProgress: heroScrollProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"],
-  });
+  const { scrollYProgress: heroProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
+  const heroY = useTransform(heroProgress, [0, 1], ["0%", "40%"]);
+  const heroOpacity = useTransform(heroProgress, [0, 0.5], [1, 0]);
+  const heroScale = useTransform(heroProgress, [0, 0.5], [1, 0.9]);
+  const mockupY = useTransform(heroProgress, [0, 1], ["0px", "60px"]);
+  const mockupRotateX = useTransform(heroProgress, [0, 1], [6, -3]);
 
-  const heroY = useTransform(heroScrollProgress, [0, 1], ["0%", "50%"]);
-  const heroOpacity = useTransform(heroScrollProgress, [0, 0.6], [1, 0]);
-  const heroScale = useTransform(heroScrollProgress, [0, 0.6], [1, 0.85]);
-  const mockupY = useTransform(heroScrollProgress, [0, 1], ["0px", "80px"]);
-  const mockupRotateX = useTransform(heroScrollProgress, [0, 1], [8, -5]);
-  const bgParallax = useTransform(heroScrollProgress, [0, 1], ["0%", "30%"]);
-
-  useEffect(() => {
-    initializeMockData();
-  }, []);
+  useEffect(() => { initializeMockData(); }, []);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => setCursorPos({ x: e.clientX, y: e.clientY });
@@ -149,80 +144,77 @@ const Index = () => {
   }, []);
 
   const showcaseItems = [
-    { img: showcaseWedding, label: "Wedding", tag: "Popular", color: "from-pink-500 to-rose-400" },
-    { img: showcaseBirthday, label: "Birthday", tag: "Trending", color: "from-amber-500 to-orange-400" },
-    { img: showcaseAnniversary, label: "Anniversary", tag: "Classic", color: "from-yellow-600 to-amber-500" },
-    { img: showcaseBusiness, label: "Business", tag: "New", color: "from-blue-600 to-indigo-500" },
+    { img: showcaseWedding, label: "Wedding", tag: "Popular", color: "from-pink-500/20 to-rose-400/20" },
+    { img: showcaseBirthday, label: "Birthday", tag: "Trending", color: "from-amber-500/20 to-orange-400/20" },
+    { img: showcaseAnniversary, label: "Anniversary", tag: "Classic", color: "from-yellow-600/20 to-amber-500/20" },
+    { img: showcaseBusiness, label: "Business", tag: "New", color: "from-blue-600/20 to-indigo-500/20" },
   ];
 
   const features = [
-    { icon: MousePointer2, title: "Click to Edit", desc: "Select any element and edit directly on canvas" },
-    { icon: Layers, title: "Layer Control", desc: "Visual layer panel with drag-to-reorder" },
-    { icon: Eye, title: "Live Preview", desc: "Instant WYSIWYG with zero reload" },
-    { icon: Wand2, title: "Smart Templates", desc: "Professionally crafted, fully customizable" },
-    { icon: Globe, title: "One-Click Publish", desc: "Share your work instantly with the world" },
-    { icon: Code2, title: "Clean Export", desc: "Pure HTML, CSS & JS — no vendor lock-in" },
+    { icon: MousePointer2, title: "Click to Edit", desc: "Select any element and edit directly on the canvas with zero friction." },
+    { icon: Layers, title: "Layer Control", desc: "Visual layer panel with intuitive drag-to-reorder functionality." },
+    { icon: Eye, title: "Live Preview", desc: "See every change instantly — true WYSIWYG with no page reloads." },
+    { icon: Wand2, title: "Smart Templates", desc: "Start with professionally designed templates, customize everything." },
+    { icon: Globe, title: "One-Click Publish", desc: "Share your creation with the world in a single click." },
+    { icon: Code2, title: "Clean Export", desc: "Export pure HTML, CSS & JavaScript — zero vendor lock-in." },
   ];
 
   const steps = [
-    { num: "01", title: "Choose a Template", desc: "Browse hundreds of professionally crafted designs for every occasion — weddings, birthdays, business events, and more.", icon: Palette },
-    { num: "02", title: "Customize Everything", desc: "Our visual editor lets you click and change anything. Text, colors, images, layout — all in real-time.", icon: Grip },
-    { num: "03", title: "Share & Export", desc: "One click to publish. Export clean HTML/CSS/JS or share a live link with anyone, anywhere.", icon: Zap },
+    { num: "01", title: "Choose a Template", desc: "Browse hundreds of professionally crafted designs for weddings, birthdays, business events and more.", icon: Palette },
+    { num: "02", title: "Customize Everything", desc: "Our visual editor lets you click and change anything — text, colors, images, layout — all in real-time.", icon: Grip },
+    { num: "03", title: "Share & Celebrate", desc: "Publish with one click. Export clean code or share a live link with anyone, anywhere in the world.", icon: Zap },
+  ];
+
+  const brandNames = [
+    "Google", "Figma", "Vercel", "Stripe", "Notion", "Linear", "Discord", "Spotify",
+    "Slack", "Dropbox", "Airbnb", "Pinterest"
   ];
 
   return (
     <div className="relative bg-background overflow-x-hidden">
 
-      {/* ====== HERO ====== */}
+      {/* ══════ CURSOR GLOW ══════ */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0 opacity-20 transition-opacity duration-700"
+        style={{ background: `radial-gradient(600px circle at ${cursorPos.x}px ${cursorPos.y}px, hsl(var(--primary) / 0.15), transparent 50%)` }}
+      />
+
+      {/* ══════════════════════════════════════════
+          HERO SECTION
+          ══════════════════════════════════════════ */}
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Cursor-reactive gradient */}
-        <div
-          className="pointer-events-none fixed inset-0 z-0 opacity-30 transition-opacity duration-700"
-          style={{
-            background: `radial-gradient(800px circle at ${cursorPos.x}px ${cursorPos.y}px, hsl(var(--primary) / 0.12), transparent 50%)`,
-          }}
-        />
-
-        {/* Parallax abstract bg */}
-        <motion.div className="absolute inset-0 z-0" style={{ y: bgParallax }}>
-          <div className="absolute inset-0 bg-gradient-to-b from-background via-background/60 to-background z-10" />
-          <img src={abstractFlow} alt="" className="w-full h-[130%] object-cover opacity-40 dark:opacity-25" width={1920} height={1080} />
-        </motion.div>
-
-        {/* Floating orbs */}
+        {/* Ambient orbs */}
         <div className="absolute inset-0 z-0 pointer-events-none">
           <motion.div
-            className="absolute w-[600px] h-[600px] rounded-full blur-[150px]"
-            style={{ background: 'hsl(var(--primary) / 0.12)', top: '5%', left: '5%' }}
-            animate={{ x: [0, 120, 0], y: [0, -80, 0], scale: [1, 1.1, 1] }}
-            transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute w-[500px] h-[500px] rounded-full blur-[140px]"
+            style={{ background: 'hsl(var(--primary) / 0.1)', top: '5%', left: '5%' }}
+            animate={{ x: [0, 100, 0], y: [0, -60, 0], scale: [1, 1.15, 1] }}
+            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
           />
           <motion.div
-            className="absolute w-[500px] h-[500px] rounded-full blur-[130px]"
-            style={{ background: 'hsl(var(--info) / 0.1)', bottom: '10%', right: '5%' }}
-            animate={{ x: [0, -100, 0], y: [0, 60, 0], scale: [1, 0.9, 1] }}
-            transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute w-[400px] h-[400px] rounded-full blur-[120px]"
+            style={{ background: 'hsl(var(--info) / 0.08)', bottom: '10%', right: '10%' }}
+            animate={{ x: [0, -80, 0], y: [0, 50, 0], scale: [1, 0.9, 1] }}
+            transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
           />
           <motion.div
-            className="absolute w-[350px] h-[350px] rounded-full blur-[100px]"
-            style={{ background: 'hsl(var(--accent) / 0.08)', top: '40%', right: '25%' }}
-            animate={{ x: [0, 60, 0], y: [0, -50, 0] }}
-            transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute w-[300px] h-[300px] rounded-full blur-[100px]"
+            style={{ background: 'hsl(var(--accent) / 0.06)', top: '50%', left: '50%' }}
+            animate={{ x: [0, 50, -40, 0], y: [0, -40, 30, 0] }}
+            transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
           />
         </div>
 
         {/* Hero content */}
-        <motion.div
-          className="relative z-10 container px-4 pt-28 pb-20"
-          style={{ opacity: heroOpacity, scale: heroScale }}
-        >
+        <motion.div className="relative z-10 container px-4 pt-28 pb-20" style={{ opacity: heroOpacity, scale: heroScale }}>
           <div className="grid lg:grid-cols-2 gap-16 lg:gap-12 items-center max-w-7xl mx-auto">
+
             {/* Left — Copy */}
             <div>
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.6, delay: 0.1 }}
               >
                 <Badge className="mb-8 px-4 py-2 text-[11px] font-bold tracking-[0.2em] uppercase glass border-primary/20 text-primary">
                   <Sparkles className="w-3.5 h-3.5 mr-2" />
@@ -230,13 +222,13 @@ const Index = () => {
                 </Badge>
               </motion.div>
 
-              <div className="space-y-2 mb-8">
-                <TextReveal className="text-5xl sm:text-6xl lg:text-[4.5rem] font-black leading-[1.05] tracking-tight text-foreground">
+              <div className="space-y-1 mb-8">
+                <RevealText className="text-5xl sm:text-6xl lg:text-[4.5rem] font-black leading-[1.05] tracking-tight text-foreground">
                   Design That
-                </TextReveal>
-                <TextReveal className="text-5xl sm:text-6xl lg:text-[4.5rem] font-black leading-[1.05] tracking-tight text-gradient">
+                </RevealText>
+                <RevealText className="text-5xl sm:text-6xl lg:text-[4.5rem] font-black leading-[1.05] tracking-tight text-gradient" delay={0.15}>
                   Feels Alive.
-                </TextReveal>
+                </RevealText>
               </div>
 
               <motion.p
@@ -246,11 +238,11 @@ const Index = () => {
                 transition={{ duration: 0.7, delay: 0.5 }}
               >
                 Create stunning, emotional web pages for every occasion.
-                No code. No limits. Just pure creativity brought to life.
+                No code. No limits. Just pure creativity.
               </motion.p>
 
               <motion.div
-                className="flex flex-col sm:flex-row gap-4 mb-14"
+                className="flex flex-col sm:flex-row gap-4 mb-12"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.65 }}
@@ -267,8 +259,7 @@ const Index = () => {
                     className="inline-flex items-center justify-center gap-2 text-base px-8 h-14 rounded-2xl glass border border-border/40 font-medium text-foreground hover:bg-accent/50 transition-all duration-300"
                     onClick={() => navigate('/auth')}
                   >
-                    <Play className="w-4 h-4" />
-                    Watch Demo
+                    <Play className="w-4 h-4" /> Watch Demo
                   </MagneticButton>
                 )}
               </motion.div>
@@ -306,18 +297,11 @@ const Index = () => {
                   boxShadow: "0 30px 60px -15px hsl(var(--primary) / 0.2), 0 0 0 1px hsl(var(--border) / 0.1)",
                 }}
                 whileHover={{ rotateX: 0, scale: 1.02 }}
-                transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+                transition={{ duration: 0.5 }}
               >
-                <img
-                  src={heroEditor}
-                  alt="Webie visual editor — a futuristic design dashboard"
-                  className="w-full h-auto"
-                  width={1920}
-                  height={1080}
-                />
+                <img src={heroEditor} alt="Webie visual editor" className="w-full h-auto" width={1920} height={1080} />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
 
-                {/* Floating badge */}
                 <motion.div
                   className="absolute bottom-5 left-5 glass rounded-2xl px-5 py-3 flex items-center gap-3"
                   animate={{ y: [0, -8, 0] }}
@@ -328,17 +312,17 @@ const Index = () => {
                 </motion.div>
               </motion.div>
 
-              {/* Floating stats card */}
+              {/* Floating card */}
               <motion.div
-                className="absolute -bottom-8 -right-4 sm:-right-10 glass-card rounded-2xl p-5 shadow-card"
+                className="absolute -bottom-6 -right-3 sm:-right-8 glass-card rounded-2xl p-4 shadow-card"
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1 }}
                 whileHover={{ scale: 1.05, y: -4 }}
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-glow">
-                    <Zap className="w-6 h-6 text-primary-foreground" />
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-glow">
+                    <Zap className="w-5 h-5 text-primary-foreground" />
                   </div>
                   <div>
                     <div className="text-sm font-bold text-foreground">Instant Export</div>
@@ -346,38 +330,16 @@ const Index = () => {
                   </div>
                 </div>
               </motion.div>
-
-              {/* Floating users card */}
-              <motion.div
-                className="absolute -top-4 -left-4 sm:-left-8 glass-card rounded-2xl p-4 shadow-card"
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.2 }}
-                whileHover={{ scale: 1.05, y: -4 }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex -space-x-2">
-                    {['bg-primary', 'bg-info', 'bg-success'].map((bg, i) => (
-                      <div key={i} className={`w-8 h-8 rounded-full ${bg} border-2 border-background flex items-center justify-center text-[10px] font-bold text-primary-foreground`}>
-                        {['S', 'M', 'A'][i]}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="text-xs font-medium text-muted-foreground">
-                    <span className="text-foreground font-bold">10K+</span> creators
-                  </div>
-                </div>
-              </motion.div>
             </motion.div>
           </div>
 
-          {/* Scroll indicator */}
+          {/* Scroll CTA */}
           <motion.div
             className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3"
             animate={{ y: [0, 10, 0] }}
             transition={{ duration: 2.5, repeat: Infinity }}
           >
-            <span className="text-[10px] text-muted-foreground tracking-[0.3em] uppercase font-medium">Dive Deeper</span>
+            <span className="text-[10px] text-muted-foreground tracking-[0.3em] uppercase font-medium">Scroll to Explore</span>
             <div className="w-6 h-10 rounded-full border-2 border-muted-foreground/30 flex justify-center pt-2">
               <motion.div
                 className="w-1.5 h-1.5 rounded-full bg-primary"
@@ -389,98 +351,103 @@ const Index = () => {
         </motion.div>
       </section>
 
-      {/* ====== MARQUEE LOGOS / TRUST BAR ====== */}
-      <section className="relative py-12 border-y border-border/20 overflow-hidden">
-        <div className="absolute inset-0 bg-muted/30" />
-        <div className="container px-4 relative z-10">
-          <motion.div
-            className="flex items-center justify-center gap-12 sm:gap-16 flex-wrap"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
+      {/* ══════════════════════════════════════════
+          BRAND MARQUEE — Social Proof
+          ══════════════════════════════════════════ */}
+      <section className="relative py-10 border-y border-border/10 overflow-hidden">
+        <div className="absolute inset-0 bg-muted/20" />
+        <FadeUp className="relative z-10">
+          <p className="text-center text-xs text-muted-foreground tracking-[0.2em] uppercase font-medium mb-6">
+            Trusted by creators worldwide
+          </p>
+          <Marquee speed={40}>
+            {brandNames.map((name) => (
+              <div key={name} className="flex items-center gap-3 px-6 py-2 opacity-40 hover:opacity-80 transition-opacity duration-300">
+                <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center">
+                  <span className="text-xs font-bold text-foreground/50">{name.charAt(0)}</span>
+                </div>
+                <span className="text-sm font-semibold text-foreground/50 tracking-wide">{name}</span>
+              </div>
+            ))}
+          </Marquee>
+        </FadeUp>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          STATS RIBBON
+          ══════════════════════════════════════════ */}
+      <section className="relative py-20">
+        <div className="container px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
             {[
-              { val: 500, suffix: "+", label: "Templates" },
-              { val: 10000, suffix: "+", label: "Happy Users" },
-              { val: 50000, suffix: "+", label: "Pages Created" },
-              { val: 5, suffix: "min", label: "Avg. Creation" },
+              { val: 500, suffix: "+", label: "Templates", icon: Palette },
+              { val: 10000, suffix: "+", label: "Happy Users", icon: Users },
+              { val: 50000, suffix: "+", label: "Pages Created", icon: TrendingUp },
+              { val: 5, suffix: "min", label: "Avg. Build Time", icon: Clock },
             ].map((stat, i) => (
-              <motion.div
-                key={i}
-                className="text-center min-w-[100px]"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-              >
+              <FadeUp key={i} delay={i * 0.1} className="text-center group">
+                <motion.div
+                  className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/5 group-hover:bg-primary/10 mb-4 transition-colors duration-300"
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                >
+                  <stat.icon className="w-6 h-6 text-primary" />
+                </motion.div>
                 <div className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
                   {stat.suffix === "min" ? (
-                    <>{"< "}<AnimatedCounter target={stat.val} />{" min"}</>
+                    <>{"<"}<AnimatedCounter target={stat.val} />{" min"}</>
                   ) : (
                     <AnimatedCounter target={stat.val} suffix={stat.suffix} />
                   )}
                 </div>
-                <div className="text-xs font-medium text-muted-foreground mt-1 tracking-wide uppercase">{stat.label}</div>
-              </motion.div>
+                <div className="text-xs font-medium text-muted-foreground mt-1.5 tracking-wide uppercase">{stat.label}</div>
+              </FadeUp>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* ====== SHOWCASE GALLERY ====== */}
-      <section className="relative py-28 sm:py-36">
+      {/* ══════════════════════════════════════════
+          SHOWCASE GALLERY
+          ══════════════════════════════════════════ */}
+      <section id="showcase" className="relative py-28 sm:py-36 scroll-mt-20">
         <div className="container px-4">
-          <motion.div
-            className="text-center mb-20"
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-          >
-            <Badge variant="outline" className="mb-5 glass border-border/40 text-[11px] tracking-[0.15em] uppercase font-semibold">
-              For Every Occasion
-            </Badge>
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black mb-6 tracking-tight leading-[1.1]">
-              Beautiful Templates,{" "}
-              <span className="text-gradient">Infinite Possibilities</span>
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              From intimate weddings to grand business events — find the perfect starting point.
-            </p>
-          </motion.div>
+          <div className="text-center mb-20">
+            <FadeUp>
+              <Badge variant="outline" className="mb-5 glass border-border/40 text-[11px] tracking-[0.15em] uppercase font-semibold">
+                For Every Occasion
+              </Badge>
+            </FadeUp>
+            <RevealText className="text-4xl sm:text-5xl lg:text-6xl font-black mb-3 tracking-tight leading-[1.1] text-foreground">
+              Beautiful Templates,
+            </RevealText>
+            <RevealText className="text-4xl sm:text-5xl lg:text-6xl font-black mb-6 tracking-tight leading-[1.1] text-gradient" delay={0.1}>
+              Infinite Possibilities
+            </RevealText>
+            <FadeUp delay={0.2}>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                From intimate weddings to grand business events — find the perfect starting point.
+              </p>
+            </FadeUp>
+          </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-7 max-w-6xl mx-auto">
             {showcaseItems.map((item, i) => (
               <motion.div
                 key={i}
                 className="relative group cursor-pointer"
-                initial={{ opacity: 0, y: 50, scale: 0.95 }}
+                initial={{ opacity: 0, y: 60, scale: 0.95 }}
                 whileInView={{ opacity: 1, y: 0, scale: 1 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.6, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
                 whileHover={{ y: -12 }}
-                onClick={() => navigate(`/templates`)}
+                onClick={() => navigate('/templates')}
               >
                 <div className="relative aspect-[3/4] rounded-3xl overflow-hidden border border-border/20 shadow-card group-hover:shadow-card-hover transition-shadow duration-500">
-                  <img
-                    src={item.img}
-                    alt={item.label}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    loading="lazy"
-                    width={800}
-                    height={1024}
-                  />
-                  {/* Overlay */}
+                  <img src={item.img} alt={item.label} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" width={800} height={1024} />
                   <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
-
-                  {/* Tag */}
                   <div className="absolute top-4 left-4">
-                    <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full glass text-foreground">
-                      {item.tag}
-                    </span>
+                    <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full glass text-foreground">{item.tag}</span>
                   </div>
-
-                  {/* Bottom label */}
                   <div className="absolute bottom-0 inset-x-0 p-5">
                     <div className="flex items-center justify-between">
                       <span className="text-lg font-bold text-foreground">{item.label}</span>
@@ -497,115 +464,113 @@ const Index = () => {
             ))}
           </div>
 
-          <motion.div
-            className="text-center mt-14"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-          >
+          <FadeUp delay={0.3} className="text-center mt-14">
             <MagneticButton
               className="inline-flex items-center gap-2 px-8 h-12 rounded-2xl glass border border-border/40 text-sm font-medium text-foreground hover:bg-accent/50 transition-all"
               onClick={() => navigate('/templates')}
             >
               View All Templates <ArrowRight className="w-4 h-4" />
             </MagneticButton>
-          </motion.div>
+          </FadeUp>
         </div>
       </section>
 
-      {/* ====== HOW IT WORKS — IMMERSIVE STEPS ====== */}
-      <section className="relative py-28 sm:py-40 overflow-hidden">
-        {/* Parallax bg */}
-        <div className="absolute inset-0">
-          <ParallaxImage src={abstractFlow} alt="" speed={60} className="absolute inset-0 opacity-15 dark:opacity-8" />
-          <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background" />
-        </div>
+      {/* ══════════════════════════════════════════
+          HOW IT WORKS — Cinematic Steps
+          ══════════════════════════════════════════ */}
+      <section id="how-it-works" className="relative py-28 sm:py-40 overflow-hidden scroll-mt-20">
+        <div className="absolute inset-0 bg-muted/10" />
 
         <div className="container px-4 relative z-10">
-          <motion.div
-            className="text-center mb-24"
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-          >
-            <Badge variant="outline" className="mb-5 glass border-border/40 text-[11px] tracking-[0.15em] uppercase font-semibold">
-              How It Works
-            </Badge>
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black mb-6 tracking-tight leading-[1.1]">
-              Three Steps to{" "}
-              <span className="text-gradient">Something Beautiful</span>
-            </h2>
-          </motion.div>
+          <div className="text-center mb-24">
+            <FadeUp>
+              <Badge variant="outline" className="mb-5 glass border-border/40 text-[11px] tracking-[0.15em] uppercase font-semibold">
+                How It Works
+              </Badge>
+            </FadeUp>
+            <RevealText className="text-4xl sm:text-5xl lg:text-6xl font-black mb-3 tracking-tight leading-[1.1] text-foreground">
+              Three Steps to
+            </RevealText>
+            <RevealText className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] text-gradient" delay={0.1}>
+              Something Beautiful
+            </RevealText>
+          </div>
 
-          <div className="max-w-5xl mx-auto space-y-32">
-            {steps.map((step, i) => (
-              <motion.div
-                key={i}
-                className={`flex flex-col ${i % 2 === 1 ? 'md:flex-row-reverse' : 'md:flex-row'} items-center gap-16`}
-                initial={{ opacity: 0, x: i % 2 === 0 ? -80 : 80 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, margin: "-120px" }}
-                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <div className="flex-1 max-w-md">
-                  <motion.div
-                    className="text-[8rem] sm:text-[10rem] font-black leading-none text-primary/8 select-none"
-                    style={{ lineHeight: 0.8 }}
-                  >
-                    {step.num}
-                  </motion.div>
-                  <h3 className="text-3xl sm:text-4xl font-bold mt-2 mb-5 text-foreground">{step.title}</h3>
-                  <p className="text-lg text-muted-foreground leading-relaxed">{step.desc}</p>
-                </div>
+          <div className="max-w-5xl mx-auto">
+            {/* Connecting line */}
+            <div className="hidden md:block absolute left-1/2 top-[320px] bottom-[200px] w-px bg-gradient-to-b from-primary/20 via-primary/10 to-transparent" />
 
-                <div className="flex-1 w-full">
-                  <motion.div
-                    className="relative aspect-video rounded-3xl glass-card border border-border/20 overflow-hidden shadow-elegant"
-                    whileHover={{ scale: 1.03, rotateY: i % 2 === 0 ? 4 : -4 }}
-                    transition={{ duration: 0.5 }}
-                    style={{ perspective: 1000 }}
-                  >
-                    <div className="absolute inset-0 bg-mesh opacity-40" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <motion.div
-                        className="w-20 h-20 rounded-3xl bg-gradient-primary flex items-center justify-center shadow-glow"
-                        whileHover={{ scale: 1.1, rotate: 5 }}
-                        animate={{ y: [0, -6, 0] }}
-                        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                      >
-                        <step.icon className="w-10 h-10 text-primary-foreground" />
-                      </motion.div>
-                    </div>
-                  </motion.div>
-                </div>
-              </motion.div>
-            ))}
+            <div className="space-y-24 md:space-y-32">
+              {steps.map((step, i) => (
+                <motion.div
+                  key={i}
+                  className={`flex flex-col ${i % 2 === 1 ? 'md:flex-row-reverse' : 'md:flex-row'} items-center gap-12 md:gap-16`}
+                  initial={{ opacity: 0, x: i % 2 === 0 ? -60 : 60 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <div className="flex-1 max-w-md">
+                    <motion.div
+                      className="text-[7rem] sm:text-[9rem] font-black leading-none text-primary/[0.06] select-none"
+                      style={{ lineHeight: 0.8 }}
+                    >
+                      {step.num}
+                    </motion.div>
+                    <h3 className="text-3xl sm:text-4xl font-bold mt-2 mb-5 text-foreground">{step.title}</h3>
+                    <p className="text-lg text-muted-foreground leading-relaxed">{step.desc}</p>
+                  </div>
+
+                  <div className="flex-1 w-full">
+                    <motion.div
+                      className="relative aspect-video rounded-3xl glass-card border border-border/20 overflow-hidden shadow-elegant"
+                      whileHover={{ scale: 1.03, rotateY: i % 2 === 0 ? 3 : -3 }}
+                      transition={{ duration: 0.5 }}
+                      style={{ perspective: 1000 }}
+                    >
+                      <div className="absolute inset-0 bg-mesh opacity-30" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <motion.div
+                          className="w-20 h-20 rounded-3xl bg-gradient-primary flex items-center justify-center shadow-glow"
+                          whileHover={{ scale: 1.1, rotate: 5 }}
+                          animate={{ y: [0, -8, 0] }}
+                          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                        >
+                          <step.icon className="w-10 h-10 text-primary-foreground" />
+                        </motion.div>
+                      </div>
+                    </motion.div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ====== FEATURES GRID ====== */}
-      <section className="relative py-28 sm:py-36">
+      {/* ══════════════════════════════════════════
+          FEATURES GRID
+          ══════════════════════════════════════════ */}
+      <section id="features" className="relative py-28 sm:py-36 scroll-mt-20">
         <div className="container px-4">
-          <motion.div
-            className="text-center mb-20"
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-          >
-            <Badge variant="outline" className="mb-5 glass border-border/40 text-[11px] tracking-[0.15em] uppercase font-semibold">
-              Powerful Features
-            </Badge>
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black mb-6 tracking-tight leading-[1.1]">
-              Built for{" "}
-              <span className="text-gradient">Creators Like You</span>
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Professional-grade tools, wrapped in an interface anyone can master.
-            </p>
-          </motion.div>
+          <div className="text-center mb-20">
+            <FadeUp>
+              <Badge variant="outline" className="mb-5 glass border-border/40 text-[11px] tracking-[0.15em] uppercase font-semibold">
+                Powerful Features
+              </Badge>
+            </FadeUp>
+            <RevealText className="text-4xl sm:text-5xl lg:text-6xl font-black mb-3 tracking-tight leading-[1.1] text-foreground">
+              Built for
+            </RevealText>
+            <RevealText className="text-4xl sm:text-5xl lg:text-6xl font-black mb-6 tracking-tight leading-[1.1] text-gradient" delay={0.1}>
+              Creators Like You
+            </RevealText>
+            <FadeUp delay={0.2}>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Professional-grade tools, wrapped in an interface anyone can master.
+              </p>
+            </FadeUp>
+          </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {features.map((feature, i) => (
@@ -636,23 +601,25 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ====== TESTIMONIALS ====== */}
+      {/* ══════════════════════════════════════════
+          TESTIMONIALS
+          ══════════════════════════════════════════ */}
       <section className="relative py-28 sm:py-36 overflow-hidden">
-        <div className="absolute inset-0 bg-muted/20" />
+        <div className="absolute inset-0 bg-muted/15" />
         <div className="container px-4 relative z-10">
-          <motion.div
-            className="text-center mb-20"
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <Badge variant="outline" className="mb-5 glass border-border/40 text-[11px] tracking-[0.15em] uppercase font-semibold">
-              What People Say
-            </Badge>
-            <h2 className="text-4xl sm:text-5xl font-black mb-6 tracking-tight leading-[1.1]">
-              Loved by <span className="text-gradient">Thousands</span>
-            </h2>
-          </motion.div>
+          <div className="text-center mb-20">
+            <FadeUp>
+              <Badge variant="outline" className="mb-5 glass border-border/40 text-[11px] tracking-[0.15em] uppercase font-semibold">
+                What People Say
+              </Badge>
+            </FadeUp>
+            <RevealText className="text-4xl sm:text-5xl font-black mb-3 tracking-tight leading-[1.1] text-foreground">
+              Loved by
+            </RevealText>
+            <RevealText className="text-4xl sm:text-5xl font-black tracking-tight leading-[1.1] text-gradient" delay={0.1}>
+              Thousands
+            </RevealText>
+          </div>
 
           <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {[
@@ -668,9 +635,7 @@ const Index = () => {
                 transition={{ delay: i * 0.12, duration: 0.6 }}
               >
                 <div className="relative h-full p-8 rounded-3xl glass-card border border-border/20 hover:border-primary/20 transition-all duration-500 card-interactive group">
-                  {/* Quote mark */}
                   <div className="absolute top-6 right-6 text-5xl font-serif text-primary/10 leading-none select-none">"</div>
-
                   <div className="flex items-center gap-1.5 mb-6">
                     {[...Array(5)].map((_, j) => (
                       <motion.div
@@ -701,7 +666,9 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ====== DEMO VIDEO SECTION ====== */}
+      {/* ══════════════════════════════════════════
+          DEMO / VIDEO SECTION
+          ══════════════════════════════════════════ */}
       <section className="relative py-28 sm:py-36">
         <div className="container px-4">
           <motion.div
@@ -710,19 +677,10 @@ const Index = () => {
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-            style={{
-              boxShadow: "0 40px 80px -20px hsl(var(--primary) / 0.2), 0 0 0 1px hsl(var(--border) / 0.1)"
-            }}
+            style={{ boxShadow: "0 40px 80px -20px hsl(var(--primary) / 0.2)" }}
           >
             <div className="relative aspect-video">
-              <img
-                src={heroEditor}
-                alt="Webie editor demo"
-                className="w-full h-full object-cover"
-                loading="lazy"
-                width={1920}
-                height={1080}
-              />
+              <img src={heroEditor} alt="Webie editor demo" className="w-full h-full object-cover" loading="lazy" width={1920} height={1080} />
               <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center">
                 <motion.button
                   className="relative w-24 h-24 rounded-full bg-primary flex items-center justify-center shadow-glow cursor-pointer"
@@ -731,7 +689,6 @@ const Index = () => {
                   onClick={() => navigate('/templates')}
                 >
                   <Play className="w-10 h-10 text-primary-foreground ml-1" />
-                  {/* Ripple */}
                   <motion.div
                     className="absolute inset-0 rounded-full border-2 border-primary"
                     animate={{ scale: [1, 1.6], opacity: [0.6, 0] }}
@@ -758,20 +715,25 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ====== FINAL CTA ====== */}
+      {/* ══════════════════════════════════════════
+          FINAL CTA
+          ══════════════════════════════════════════ */}
       <section className="relative py-36 sm:py-48 overflow-hidden">
-        <div className="absolute inset-0">
-          <ParallaxImage src={abstractFlow} alt="" speed={80} className="absolute inset-0 opacity-20 dark:opacity-10" />
-          <div className="absolute inset-0 bg-gradient-to-b from-background via-background/85 to-background" />
+        {/* Ambient bg */}
+        <div className="absolute inset-0 pointer-events-none">
+          <motion.div
+            className="absolute w-[500px] h-[500px] rounded-full blur-[160px]"
+            style={{ background: 'hsl(var(--primary) / 0.12)', top: '20%', left: '10%' }}
+            animate={{ x: [0, 80, 0], y: [0, -60, 0] }}
+            transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            className="absolute w-[400px] h-[400px] rounded-full blur-[140px]"
+            style={{ background: 'hsl(var(--info) / 0.08)', bottom: '10%', right: '15%' }}
+            animate={{ x: [0, -60, 0], y: [0, 40, 0] }}
+            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+          />
         </div>
-
-        {/* Animated orbs */}
-        <motion.div
-          className="absolute w-[500px] h-[500px] rounded-full blur-[160px] pointer-events-none"
-          style={{ background: 'hsl(var(--primary) / 0.15)', top: '20%', left: '10%' }}
-          animate={{ x: [0, 80, 0], y: [0, -60, 0] }}
-          transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
-        />
 
         <div className="container px-4 relative z-10">
           <motion.div
@@ -781,77 +743,65 @@ const Index = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="space-y-3 mb-10">
-              <TextReveal className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight text-foreground">
+            <div className="space-y-2 mb-10">
+              <RevealText className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight text-foreground">
                 Ready to Create
-              </TextReveal>
-              <TextReveal className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight text-gradient">
+              </RevealText>
+              <RevealText className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight text-gradient" delay={0.15}>
                 Something Amazing?
-              </TextReveal>
+              </RevealText>
             </div>
 
-            <motion.p
-              className="text-lg sm:text-xl text-muted-foreground mb-14 max-w-2xl mx-auto leading-relaxed"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
-            >
-              Join thousands of creators who bring their visions to life every day.
-              No design experience required. Start for free.
-            </motion.p>
+            <FadeUp delay={0.3}>
+              <p className="text-lg sm:text-xl text-muted-foreground mb-14 max-w-2xl mx-auto leading-relaxed">
+                Join thousands of creators who bring their visions to life every day.
+                No design experience required. Start for free.
+              </p>
+            </FadeUp>
 
-            <motion.div
-              className="flex flex-col sm:flex-row gap-5 justify-center mb-14"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.4 }}
-            >
-              <MagneticButton
-                className="inline-flex items-center justify-center gap-2 text-base px-10 h-14 rounded-2xl bg-primary text-primary-foreground font-semibold shadow-elegant hover:shadow-glow transition-all duration-300 group"
-                onClick={() => navigate('/templates')}
-              >
-                Get Started Free
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </MagneticButton>
-              {!isAuthenticated && (
+            <FadeUp delay={0.4}>
+              <div className="flex flex-col sm:flex-row gap-5 justify-center mb-14">
                 <MagneticButton
-                  className="inline-flex items-center justify-center gap-2 text-base px-10 h-14 rounded-2xl glass border border-border/40 font-medium text-foreground hover:bg-accent/50 transition-all duration-300"
-                  onClick={() => navigate('/auth')}
+                  className="inline-flex items-center justify-center gap-2 text-base px-10 h-14 rounded-2xl bg-primary text-primary-foreground font-semibold shadow-elegant hover:shadow-glow transition-all duration-300 group"
+                  onClick={() => navigate('/templates')}
                 >
-                  Create Account
+                  Get Started Free
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </MagneticButton>
-              )}
-            </motion.div>
+                {!isAuthenticated && (
+                  <MagneticButton
+                    className="inline-flex items-center justify-center gap-2 text-base px-10 h-14 rounded-2xl glass border border-border/40 font-medium text-foreground hover:bg-accent/50 transition-all duration-300"
+                    onClick={() => navigate('/auth')}
+                  >
+                    Create Account
+                  </MagneticButton>
+                )}
+              </div>
+            </FadeUp>
 
-            <motion.div
-              className="flex flex-wrap items-center justify-center gap-8 text-sm text-muted-foreground"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.5 }}
-            >
-              {["No credit card required", "Free forever plan", "Cancel anytime"].map((text, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Check className="w-3 h-3 text-primary" />
+            <FadeUp delay={0.5}>
+              <div className="flex flex-wrap items-center justify-center gap-8 text-sm text-muted-foreground">
+                {["No credit card required", "Free forever plan", "Cancel anytime"].map((text, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Check className="w-3 h-3 text-primary" />
+                    </div>
+                    <span>{text}</span>
                   </div>
-                  <span>{text}</span>
-                </div>
-              ))}
-            </motion.div>
+                ))}
+              </div>
+            </FadeUp>
           </motion.div>
         </div>
       </section>
 
-      {/* ====== FOOTER ====== */}
+      {/* ══════ FOOTER ══════ */}
       <footer className="border-t border-border/20 py-14">
         <div className="container px-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <motion.div
               className="flex items-center gap-2.5 cursor-pointer group"
-              onClick={() => navigate('/')}
+              onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }}
               whileHover={{ scale: 1.03 }}
             >
               <Sparkles className="w-5 h-5 text-primary" />
