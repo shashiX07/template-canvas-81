@@ -4,15 +4,15 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    --background: 48 33% 96%;
+    --foreground: 0 0% 8%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 0 0% 8%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 262 83% 58%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 262 83% 68%;
+    --popover-foreground: 0 0% 8%;
+    --primary: 50 100% 55%;
+    --primary-foreground: 0 0% 8%;
+    --primary-glow: 50 100% 65%;
     --secondary: 210 40% 96%;
     --secondary-foreground: 222 47% 11%;
     --muted: 210 40% 96%;
@@ -23,8 +23,8 @@
     --destructive-foreground: 0 0% 98%;
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 262 83% 58%;
-    --radius: 0.75rem;
+    --ring: 50 100% 55%;
+    --radius: 9999px;
     
     /* Enhanced gradients */
     --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(280 83% 60%), hsl(262 83% 68%));
@@ -135,6 +135,22 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, sans-serif;
+    line-height: 1.7;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  h1, h2, h3, h4, h5 {
+    font-family: 'Fraunces', Georgia, serif;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+
+  .font-display {
+    font-family: 'Fraunces', Georgia, serif;
+  }
+  .font-mono-accent {
+    font-family: 'JetBrains Mono', monospace;
   }
 }
 
