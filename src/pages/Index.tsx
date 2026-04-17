@@ -14,6 +14,7 @@ import {
   useSpring, useMotionValue, useMotionValueEvent
 } from "framer-motion";
 
+import { Header } from "@/components/Header";
 import heroEditor from "@/assets/hero-editor-3d.jpg";
 import abstractFlow from "@/assets/abstract-flow.jpg";
 import showcaseWedding from "@/assets/showcase-wedding.jpg";
