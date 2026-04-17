@@ -88,17 +88,9 @@ export function Header() {
           whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.96 }}
         >
-          <div className="relative">
-            <motion.div
-              animate={{ rotate: [0, 10, -10, 0] }}
-              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <Sparkles className="w-5 h-5 text-primary" />
-            </motion.div>
-            <div className="absolute inset-0 bg-primary/30 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          </div>
-          <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Webie
+          <div className="w-2 h-2 rounded-full bg-primary" />
+          <span className="font-display text-2xl font-medium tracking-tight text-foreground">
+            webie<span className="italic font-light">.</span>
           </span>
         </motion.div>
 
