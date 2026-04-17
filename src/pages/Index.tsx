@@ -173,6 +173,7 @@ const Index = () => {
 
   return (
     <div className="relative bg-background overflow-x-hidden">
+      <Header />
 
       {/* ══════ CURSOR GLOW ══════ */}
       <div
