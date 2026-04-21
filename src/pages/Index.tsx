@@ -112,6 +112,46 @@ export default function Index() {
 
       {/* ═══ HERO ═══ */}
       <section ref={heroRef} className="relative min-h-screen flex flex-col justify-center pt-36 md:pt-40 pb-32 md:pb-40 bg-background">
+        {/* floating hero collage — desktop only */}
+        <div className="absolute inset-0 pointer-events-none hidden lg:block overflow-hidden">
+          <motion.div
+            initial={{ opacity: 0, y: 40, rotate: -6 }}
+            animate={{ opacity: 1, y: 0, rotate: -6 }}
+            transition={{ duration: 1.2, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            style={{ y: useTransform(scrollYProgress, [0, 1], [0, -120]) }}
+            className="absolute top-[18%] right-[6%] w-56 xl:w-64 aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl ring-1 ring-foreground/10"
+          >
+            <img src={heroCollage1} alt="" className="w-full h-full object-cover" />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 60, rotate: 8 }}
+            animate={{ opacity: 1, y: 0, rotate: 8 }}
+            transition={{ duration: 1.2, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            style={{ y: useTransform(scrollYProgress, [0, 1], [0, -200]) }}
+            className="absolute bottom-[12%] right-[22%] w-44 xl:w-52 aspect-square rounded-2xl overflow-hidden shadow-2xl ring-1 ring-foreground/10"
+          >
+            <img src={heroCollage2} alt="" className="w-full h-full object-cover" />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 50, rotate: -10 }}
+            animate={{ opacity: 1, y: 0, rotate: -10 }}
+            transition={{ duration: 1.2, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            style={{ y: useTransform(scrollYProgress, [0, 1], [0, -80]) }}
+            className="absolute top-[28%] left-[4%] w-40 xl:w-48 aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl ring-1 ring-foreground/10 opacity-90"
+          >
+            <img src={heroCollage4} alt="" className="w-full h-full object-cover" />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 30, rotate: 5 }}
+            animate={{ opacity: 1, y: 0, rotate: 5 }}
+            transition={{ duration: 1.2, delay: 0.9, ease: [0.22, 1, 0.36, 1] }}
+            style={{ y: useTransform(scrollYProgress, [0, 1], [0, -160]) }}
+            className="absolute bottom-[20%] left-[14%] w-52 xl:w-60 aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl ring-1 ring-foreground/10"
+          >
+            <img src={heroCollage3} alt="" className="w-full h-full object-cover" />
+          </motion.div>
+        </div>
+
         <motion.div style={{ y: heroY, opacity: heroOpacity }} className="container px-6 md:px-10 relative z-10">
           {/* eyebrow */}
           <Reveal>
