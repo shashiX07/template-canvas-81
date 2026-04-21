@@ -14,6 +14,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 import { motion, AnimatePresence } from "framer-motion";
+import webilioLogo from "@/assets/webilio-logo.png";
 
 export function Header() {
   const navigate = useNavigate();
@@ -80,7 +81,7 @@ export function Header() {
       <div className={`flex items-center justify-between ${isFloating ? 'px-5 py-2' : 'container px-4 h-16'}`}>
         {/* Logo */}
         <motion.div
-          className="flex items-center gap-2 cursor-pointer group"
+          className="flex items-center gap-2.5 cursor-pointer group"
           onClick={() => {
             if (isHomePage) window.scrollTo({ top: 0, behavior: 'smooth' });
             else navigate('/');
@@ -88,9 +89,9 @@ export function Header() {
           whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.96 }}
         >
-          <div className="w-2 h-2 rounded-full bg-primary" />
-          <span className="font-display text-2xl font-medium tracking-tight text-foreground">
-            webie<span className="italic font-light">.</span>
+          <img src={webilioLogo} alt="Webilio" className="h-9 w-9 object-contain" />
+          <span className="font-display text-2xl font-semibold tracking-tight text-foreground">
+            Webilio
           </span>
         </motion.div>
 
