@@ -24,7 +24,7 @@
     --border: 214 32% 91%;
     --input: 214 32% 91%;
     --ring: 210 90% 62%;
-    --radius: 9999px;
+    --radius: 0.75rem;
     
     /* Enhanced gradients */
     --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(280 83% 60%), hsl(262 83% 68%));
