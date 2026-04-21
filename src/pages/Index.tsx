@@ -10,6 +10,11 @@ import showcaseWedding from "@/assets/showcase-wedding.jpg";
 import showcaseBirthday from "@/assets/showcase-birthday.jpg";
 import showcaseAnniversary from "@/assets/showcase-anniversary.jpg";
 import showcaseBusiness from "@/assets/showcase-business.jpg";
+import heroCollage1 from "@/assets/hero-collage-1.jpg";
+import heroCollage2 from "@/assets/hero-collage-2.jpg";
+import heroCollage3 from "@/assets/hero-collage-3.jpg";
+import heroCollage4 from "@/assets/hero-collage-4.jpg";
+import sectionTexture from "@/assets/section-texture.jpg";
 
 /* ─── Motion primitives ───────────────────────────── */
 
