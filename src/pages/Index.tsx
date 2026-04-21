@@ -52,8 +52,8 @@ export default function Index() {
   const navigate = useNavigate();
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
-  const heroY = useTransform(scrollYProgress, [0, 1], [0, 200]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+  const heroY = useTransform(scrollYProgress, [0, 1], [0, 80]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.6, 1], [1, 0.85, 0.4]);
 
   const marqueeRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress: galleryProgress } = useScroll({
@@ -112,33 +112,33 @@ export default function Index() {
       <Header />
 
       {/* ═══ HERO ═══ */}
-      <section ref={heroRef} className="relative min-h-screen flex flex-col justify-center pt-32 pb-20">
+      <section ref={heroRef} className="relative min-h-screen flex flex-col justify-center pt-36 md:pt-40 pb-32 md:pb-40 bg-background">
         <motion.div style={{ y: heroY, opacity: heroOpacity }} className="container px-6 md:px-10 relative z-10">
           {/* eyebrow */}
           <Reveal>
-            <div className="flex items-center gap-3 mb-10">
+            <div className="flex items-center gap-3 mb-12">
               <span className="w-12 h-px bg-foreground" />
               <span className="font-mono-accent text-xs uppercase tracking-[0.25em] text-foreground/70">
-                Webie · Est. 2024
+                Webilio · Est. 2024
               </span>
             </div>
           </Reveal>
 
           {/* headline */}
           <Reveal delay={0.1}>
-            <h1 className="font-display text-[clamp(3.5rem,11vw,11rem)] font-light leading-[0.92] tracking-tight max-w-[15ch]">
+            <h1 className="font-display text-[clamp(2.75rem,9vw,9rem)] font-light leading-[1.02] tracking-tight max-w-[14ch]">
               Make a website
               <br />
-              <span className="italic font-normal">worth</span>
-              <span className="relative inline-block ml-4">
-                <span className="absolute -inset-x-3 inset-y-3 bg-primary -z-10 rounded-full" />
-                <span className="font-medium">looking</span>
+              <span className="italic font-normal">worth</span>{" "}
+              <span className="relative inline-block">
+                <span className="absolute -inset-x-3 inset-y-2 bg-primary/80 -z-10 rounded-full" />
+                <span className="font-medium text-primary-foreground px-2">looking</span>
               </span>
               <br />at.
             </h1>
           </Reveal>
 
-          <div className="grid md:grid-cols-12 gap-8 mt-16 items-end">
+          <div className="grid md:grid-cols-12 gap-10 mt-20 md:mt-24 items-end">
             <Reveal delay={0.3} className="md:col-span-6">
               <p className="text-lg md:text-xl text-foreground/70 leading-[1.8] max-w-md">
                 A builder for the people who actually care how things look. No templates that scream "made online." No gradients pretending to be design. Just thoughtful tools and beautiful type.
