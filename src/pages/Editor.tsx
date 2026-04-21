@@ -51,6 +51,8 @@ const Editor = () => {
   const [elementType, setElementType] = useState<ElementType>('none');
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const canvasMediaInputRef = useRef<HTMLInputElement>(null);
+  const [canvasUploadAccept, setCanvasUploadAccept] = useState<string>("image/*");
   const selectedElementRef = useRef<HTMLElement | null>(null);
   const isInlineEditingRef = useRef(false);
   
@@ -310,6 +312,18 @@ const Editor = () => {
       if (element === iframeDoc.body || element === iframeDoc.documentElement) return;
 
       const tagName = element.tagName.toLowerCase();
+      // Double-click on image/video → open native file picker to replace media
+      if (tagName === 'img' || tagName === 'video') {
+        // Ensure element is selected so handleMediaUpload targets it
+        iframeDoc.querySelectorAll('.editor-selected').forEach(el => el.classList.remove('editor-selected'));
+        element.classList.add('editor-selected');
+        setSelectedElement(element);
+        detectElementType(element);
+        setCanvasUploadAccept(tagName === 'img' ? 'image/*' : 'video/*');
+        // Defer so the accept attribute is applied before opening the picker
+        setTimeout(() => canvasMediaInputRef.current?.click(), 0);
+        return;
+      }
       if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'a', 'button', 'li', 'td', 'th', 'label'].includes(tagName) ||
           (element.childNodes.length === 1 && element.childNodes[0].nodeType === Node.TEXT_NODE)) {
         setIsInlineEditing(true);
@@ -517,6 +531,18 @@ const Editor = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Hidden input used for double-click-to-replace media on the canvas */}
+      <input
+        ref={canvasMediaInputRef}
+        type="file"
+        accept={canvasUploadAccept}
+        className="hidden"
+        onChange={(e) => {
+          handleMediaUpload(e);
+          // Reset so picking the same file again still triggers change
+          if (e.target) e.target.value = "";
+        }}
+      />
       {/* Floating Toolbar */}
       <FloatingToolbar
         position={toolbarPosition}

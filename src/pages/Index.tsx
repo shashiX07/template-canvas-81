@@ -354,6 +354,61 @@ export default function Index() {
         </Reveal>
       </section>
 
+      {/* ═══ PROCESS / KINETIC LIST ═══ */}
+      <section className="py-32 border-t border-foreground/10">
+        <div className="container px-6 md:px-10 mb-20">
+          <Reveal>
+            <div className="flex items-center gap-3 mb-6">
+              <span className="w-12 h-px bg-foreground" />
+              <span className="font-mono-accent text-xs uppercase tracking-[0.25em] text-foreground/70">
+                How it works
+              </span>
+            </div>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <h2 className="font-display text-5xl md:text-7xl font-light leading-[1.05] max-w-3xl">
+              Four small <span className="italic">moments</span> between a blank page and a site you love.
+            </h2>
+          </Reveal>
+        </div>
+
+        <div className="container px-6 md:px-10">
+          {[
+            { n: "01", t: "Pick a feeling", d: "Browse hand-made templates organized by mood, not category. Trust your gut.", img: heroCollage1 },
+            { n: "02", t: "Make it yours", d: "Click anything to change it. Replace photos by double-clicking. No menus to memorize.", img: heroCollage2 },
+            { n: "03", t: "Let it breathe", d: "Generous spacing, real typography, soft motion. The defaults already look intentional.", img: heroCollage3 },
+            { n: "04", t: "Send it out", d: "Publish in one click. Share a link. Watch the people you care about react.", img: heroCollage4 },
+          ].map((step, i) => (
+            <Reveal key={i} delay={i * 0.05}>
+              <div className="group border-t border-foreground/15 py-10 md:py-12 grid grid-cols-12 gap-6 items-center cursor-default">
+                <div className="col-span-2 md:col-span-1 font-mono-accent text-sm text-foreground/40">{step.n}</div>
+                <div className="col-span-10 md:col-span-6">
+                  <h3 className="font-display text-3xl md:text-5xl font-normal leading-[1.05] group-hover:italic transition-all duration-500">
+                    {step.t}
+                  </h3>
+                  <p className="mt-3 text-foreground/70 leading-[1.8] max-w-md md:hidden">{step.d}</p>
+                </div>
+                <div className="hidden md:block col-span-3 text-foreground/70 leading-[1.8] text-sm">
+                  {step.d}
+                </div>
+                <div className="hidden md:block col-span-2 overflow-hidden rounded-2xl aspect-[4/5] bg-muted">
+                  <motion.img
+                    src={step.img}
+                    alt={step.t}
+                    className="w-full h-full object-cover"
+                    initial={{ scale: 1.1, filter: "grayscale(60%)" }}
+                    whileHover={{ scale: 1.04, filter: "grayscale(0%)" }}
+                    whileInView={{ scale: 1, filter: "grayscale(20%)" }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+                  />
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
       {/* ═══ EDITORIAL IMAGE GRID ═══ */}
       <section
         className="py-32 relative overflow-hidden"
