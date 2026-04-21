@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ArrowUpRight, Check, Star, Plus, Minus } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Check, Plus, Minus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { initializeMockData } from "@/lib/storage";
@@ -10,6 +10,11 @@ import showcaseWedding from "@/assets/showcase-wedding.jpg";
 import showcaseBirthday from "@/assets/showcase-birthday.jpg";
 import showcaseAnniversary from "@/assets/showcase-anniversary.jpg";
 import showcaseBusiness from "@/assets/showcase-business.jpg";
+import heroCollage1 from "@/assets/hero-collage-1.jpg";
+import heroCollage2 from "@/assets/hero-collage-2.jpg";
+import heroCollage3 from "@/assets/hero-collage-3.jpg";
+import heroCollage4 from "@/assets/hero-collage-4.jpg";
+import sectionTexture from "@/assets/section-texture.jpg";
 
 /* ─── Motion primitives ───────────────────────────── */
 
@@ -85,12 +90,6 @@ export default function Index() {
     { n: "04", t: "Own your domain", d: "Connect a custom URL in two clicks. SSL handled, always." },
   ];
 
-  const testimonials = [
-    { name: "Lena Park", role: "Florist · Brooklyn", quote: "I made my whole shop website on a Tuesday afternoon. It looks better than what my friend paid four thousand for." },
-    { name: "Hiro Tanaka", role: "Photographer · Kyoto", quote: "The type choices alone sold me. Finally something that doesn't look like every other landing page on the internet." },
-    { name: "Aisha Rahman", role: "Founder · Maven Co.", quote: "We replaced three tools with this. Our team ships pages in hours, not sprints." },
-  ];
-
   const faqs = [
     { q: "Do I need to know how to code?", a: "Not at all. Everything is visual — drag elements, type words, drop images. If you can use Notion, you can use this." },
     { q: "Can I use my own domain?", a: "Yes. Connect any domain you own in two clicks. We handle SSL, redirects, and DNS automatically." },
@@ -113,6 +112,46 @@ export default function Index() {
 
       {/* ═══ HERO ═══ */}
       <section ref={heroRef} className="relative min-h-screen flex flex-col justify-center pt-36 md:pt-40 pb-32 md:pb-40 bg-background">
+        {/* floating hero collage — desktop only */}
+        <div className="absolute inset-0 pointer-events-none hidden lg:block overflow-hidden">
+          <motion.div
+            initial={{ opacity: 0, y: 40, rotate: -6 }}
+            animate={{ opacity: 1, y: 0, rotate: -6 }}
+            transition={{ duration: 1.2, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            style={{ y: useTransform(scrollYProgress, [0, 1], [0, -120]) }}
+            className="absolute top-[18%] right-[6%] w-56 xl:w-64 aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl ring-1 ring-foreground/10"
+          >
+            <img src={heroCollage1} alt="" className="w-full h-full object-cover" />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 60, rotate: 8 }}
+            animate={{ opacity: 1, y: 0, rotate: 8 }}
+            transition={{ duration: 1.2, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            style={{ y: useTransform(scrollYProgress, [0, 1], [0, -200]) }}
+            className="absolute bottom-[12%] right-[22%] w-44 xl:w-52 aspect-square rounded-2xl overflow-hidden shadow-2xl ring-1 ring-foreground/10"
+          >
+            <img src={heroCollage2} alt="" className="w-full h-full object-cover" />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 50, rotate: -10 }}
+            animate={{ opacity: 1, y: 0, rotate: -10 }}
+            transition={{ duration: 1.2, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            style={{ y: useTransform(scrollYProgress, [0, 1], [0, -80]) }}
+            className="absolute top-[28%] left-[4%] w-40 xl:w-48 aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl ring-1 ring-foreground/10 opacity-90"
+          >
+            <img src={heroCollage4} alt="" className="w-full h-full object-cover" />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 30, rotate: 5 }}
+            animate={{ opacity: 1, y: 0, rotate: 5 }}
+            transition={{ duration: 1.2, delay: 0.9, ease: [0.22, 1, 0.36, 1] }}
+            style={{ y: useTransform(scrollYProgress, [0, 1], [0, -160]) }}
+            className="absolute bottom-[20%] left-[14%] w-52 xl:w-60 aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl ring-1 ring-foreground/10"
+          >
+            <img src={heroCollage3} alt="" className="w-full h-full object-cover" />
+          </motion.div>
+        </div>
+
         <motion.div style={{ y: heroY, opacity: heroOpacity }} className="container px-6 md:px-10 relative z-10">
           {/* eyebrow */}
           <Reveal>
@@ -315,37 +354,91 @@ export default function Index() {
         </Reveal>
       </section>
 
-      {/* ═══ TESTIMONIALS ═══ */}
-      <section className="py-32 bg-primary/15">
+      {/* ═══ EDITORIAL IMAGE GRID ═══ */}
+      <section
+        className="py-32 relative overflow-hidden"
+        style={{
+          backgroundImage: `linear-gradient(hsl(var(--primary) / 0.08), hsl(var(--primary) / 0.04)), url(${sectionTexture})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
         <div className="container px-6 md:px-10">
           <Reveal>
-            <div className="flex items-center gap-3 mb-16">
+            <div className="flex items-center gap-3 mb-12">
               <span className="w-12 h-px bg-foreground" />
               <span className="font-mono-accent text-xs uppercase tracking-[0.25em] text-foreground/70">
-                People who made things
+                A closer look
               </span>
             </div>
           </Reveal>
+          <Reveal delay={0.1}>
+            <h2 className="font-display text-5xl md:text-7xl font-light leading-[1.05] max-w-3xl mb-20">
+              Made for the <span className="italic">moments</span> that matter.
+            </h2>
+          </Reveal>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {testimonials.map((t, i) => (
-              <Reveal key={i} delay={i * 0.1}>
-                <div className="bg-background rounded-3xl p-8 h-full flex flex-col">
-                  <div className="flex gap-1 mb-6">
-                    {[...Array(5)].map((_, j) => (
-                      <Star key={j} className="w-4 h-4 fill-foreground text-foreground" />
-                    ))}
-                  </div>
-                  <p className="font-display text-xl leading-[1.5] flex-1">"{t.quote}"</p>
-                  <div className="mt-8 pt-6 border-t border-foreground/10">
-                    <div className="font-medium">{t.name}</div>
-                    <div className="font-mono-accent text-xs uppercase tracking-[0.2em] text-foreground/60 mt-1">
-                      {t.role}
-                    </div>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
+          <div className="grid grid-cols-12 gap-4 md:gap-6">
+            <Reveal className="col-span-7 md:col-span-5" delay={0.05}>
+              <div className="overflow-hidden rounded-2xl aspect-[3/4]">
+                <motion.img
+                  src={heroCollage1}
+                  alt="Editorial bouquet"
+                  loading="lazy"
+                  className="w-full h-full object-cover"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.8 }}
+                />
+              </div>
+            </Reveal>
+            <Reveal className="col-span-5 md:col-span-4 mt-12" delay={0.15}>
+              <div className="overflow-hidden rounded-2xl aspect-square">
+                <motion.img
+                  src={heroCollage2}
+                  alt="Minimal still life"
+                  loading="lazy"
+                  className="w-full h-full object-cover"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.8 }}
+                />
+              </div>
+              <div className="mt-6 font-mono-accent text-xs uppercase tracking-[0.25em] text-foreground/60">
+                No.02 — Stillness in form
+              </div>
+            </Reveal>
+            <Reveal className="col-span-12 md:col-span-3 md:mt-32" delay={0.25}>
+              <p className="font-display text-2xl md:text-3xl leading-[1.3] italic text-foreground/80">
+                "Design is a conversation between what you say and what you leave out."
+              </p>
+            </Reveal>
+
+            <Reveal className="col-span-12 md:col-span-7 md:col-start-2 mt-8" delay={0.1}>
+              <div className="overflow-hidden rounded-2xl aspect-[16/10]">
+                <motion.img
+                  src={heroCollage3}
+                  alt="Architectural light"
+                  loading="lazy"
+                  className="w-full h-full object-cover"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.8 }}
+                />
+              </div>
+            </Reveal>
+            <Reveal className="col-span-12 md:col-span-4 mt-8 md:mt-20" delay={0.2}>
+              <div className="overflow-hidden rounded-2xl aspect-[3/4]">
+                <motion.img
+                  src={heroCollage4}
+                  alt="Hands writing"
+                  loading="lazy"
+                  className="w-full h-full object-cover"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.8 }}
+                />
+              </div>
+              <div className="mt-6 font-mono-accent text-xs uppercase tracking-[0.25em] text-foreground/60">
+                No.04 — Made by hand
+              </div>
+            </Reveal>
           </div>
         </div>
       </section>
