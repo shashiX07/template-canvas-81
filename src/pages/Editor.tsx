@@ -312,6 +312,18 @@ const Editor = () => {
       if (element === iframeDoc.body || element === iframeDoc.documentElement) return;
 
       const tagName = element.tagName.toLowerCase();
+      // Double-click on image/video → open native file picker to replace media
+      if (tagName === 'img' || tagName === 'video') {
+        // Ensure element is selected so handleMediaUpload targets it
+        iframeDoc.querySelectorAll('.editor-selected').forEach(el => el.classList.remove('editor-selected'));
+        element.classList.add('editor-selected');
+        setSelectedElement(element);
+        detectElementType(element);
+        setCanvasUploadAccept(tagName === 'img' ? 'image/*' : 'video/*');
+        // Defer so the accept attribute is applied before opening the picker
+        setTimeout(() => canvasMediaInputRef.current?.click(), 0);
+        return;
+      }
       if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'a', 'button', 'li', 'td', 'th', 'label'].includes(tagName) ||
           (element.childNodes.length === 1 && element.childNodes[0].nodeType === Node.TEXT_NODE)) {
         setIsInlineEditing(true);
