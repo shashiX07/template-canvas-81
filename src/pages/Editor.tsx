@@ -51,6 +51,8 @@ const Editor = () => {
   const [elementType, setElementType] = useState<ElementType>('none');
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const canvasMediaInputRef = useRef<HTMLInputElement>(null);
+  const [canvasUploadAccept, setCanvasUploadAccept] = useState<string>("image/*");
   const selectedElementRef = useRef<HTMLElement | null>(null);
   const isInlineEditingRef = useRef(false);
   
