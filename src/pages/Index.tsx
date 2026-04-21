@@ -314,37 +314,91 @@ export default function Index() {
         </Reveal>
       </section>
 
-      {/* ═══ TESTIMONIALS ═══ */}
-      <section className="py-32 bg-primary/15">
+      {/* ═══ EDITORIAL IMAGE GRID ═══ */}
+      <section
+        className="py-32 relative overflow-hidden"
+        style={{
+          backgroundImage: `linear-gradient(hsl(var(--primary) / 0.08), hsl(var(--primary) / 0.04)), url(${sectionTexture})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
         <div className="container px-6 md:px-10">
           <Reveal>
-            <div className="flex items-center gap-3 mb-16">
+            <div className="flex items-center gap-3 mb-12">
               <span className="w-12 h-px bg-foreground" />
               <span className="font-mono-accent text-xs uppercase tracking-[0.25em] text-foreground/70">
-                People who made things
+                A closer look
               </span>
             </div>
           </Reveal>
+          <Reveal delay={0.1}>
+            <h2 className="font-display text-5xl md:text-7xl font-light leading-[1.05] max-w-3xl mb-20">
+              Made for the <span className="italic">moments</span> that matter.
+            </h2>
+          </Reveal>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {testimonials.map((t, i) => (
-              <Reveal key={i} delay={i * 0.1}>
-                <div className="bg-background rounded-3xl p-8 h-full flex flex-col">
-                  <div className="flex gap-1 mb-6">
-                    {[...Array(5)].map((_, j) => (
-                      <Star key={j} className="w-4 h-4 fill-foreground text-foreground" />
-                    ))}
-                  </div>
-                  <p className="font-display text-xl leading-[1.5] flex-1">"{t.quote}"</p>
-                  <div className="mt-8 pt-6 border-t border-foreground/10">
-                    <div className="font-medium">{t.name}</div>
-                    <div className="font-mono-accent text-xs uppercase tracking-[0.2em] text-foreground/60 mt-1">
-                      {t.role}
-                    </div>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
+          <div className="grid grid-cols-12 gap-4 md:gap-6">
+            <Reveal className="col-span-7 md:col-span-5" delay={0.05}>
+              <div className="overflow-hidden rounded-2xl aspect-[3/4]">
+                <motion.img
+                  src={heroCollage1}
+                  alt="Editorial bouquet"
+                  loading="lazy"
+                  className="w-full h-full object-cover"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.8 }}
+                />
+              </div>
+            </Reveal>
+            <Reveal className="col-span-5 md:col-span-4 mt-12" delay={0.15}>
+              <div className="overflow-hidden rounded-2xl aspect-square">
+                <motion.img
+                  src={heroCollage2}
+                  alt="Minimal still life"
+                  loading="lazy"
+                  className="w-full h-full object-cover"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.8 }}
+                />
+              </div>
+              <div className="mt-6 font-mono-accent text-xs uppercase tracking-[0.25em] text-foreground/60">
+                No.02 — Stillness in form
+              </div>
+            </Reveal>
+            <Reveal className="col-span-12 md:col-span-3 md:mt-32" delay={0.25}>
+              <p className="font-display text-2xl md:text-3xl leading-[1.3] italic text-foreground/80">
+                "Design is a conversation between what you say and what you leave out."
+              </p>
+            </Reveal>
+
+            <Reveal className="col-span-12 md:col-span-7 md:col-start-2 mt-8" delay={0.1}>
+              <div className="overflow-hidden rounded-2xl aspect-[16/10]">
+                <motion.img
+                  src={heroCollage3}
+                  alt="Architectural light"
+                  loading="lazy"
+                  className="w-full h-full object-cover"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.8 }}
+                />
+              </div>
+            </Reveal>
+            <Reveal className="col-span-12 md:col-span-4 mt-8 md:mt-20" delay={0.2}>
+              <div className="overflow-hidden rounded-2xl aspect-[3/4]">
+                <motion.img
+                  src={heroCollage4}
+                  alt="Hands writing"
+                  loading="lazy"
+                  className="w-full h-full object-cover"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.8 }}
+                />
+              </div>
+              <div className="mt-6 font-mono-accent text-xs uppercase tracking-[0.25em] text-foreground/60">
+                No.04 — Made by hand
+              </div>
+            </Reveal>
           </div>
         </div>
       </section>
