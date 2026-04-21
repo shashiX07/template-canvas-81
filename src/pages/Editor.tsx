@@ -531,6 +531,18 @@ const Editor = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Hidden input used for double-click-to-replace media on the canvas */}
+      <input
+        ref={canvasMediaInputRef}
+        type="file"
+        accept={canvasUploadAccept}
+        className="hidden"
+        onChange={(e) => {
+          handleMediaUpload(e);
+          // Reset so picking the same file again still triggers change
+          if (e.target) e.target.value = "";
+        }}
+      />
       {/* Floating Toolbar */}
       <FloatingToolbar
         position={toolbarPosition}
