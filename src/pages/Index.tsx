@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ArrowUpRight, Check, Star, Plus, Minus } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Check, Plus, Minus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { initializeMockData } from "@/lib/storage";
@@ -88,12 +88,6 @@ export default function Index() {
     { n: "02", t: "Hand-picked type", d: "A curated library of editorial typography — never another generic stack." },
     { n: "03", t: "Real performance", d: "Static-first output. Pages load in under a second on any connection." },
     { n: "04", t: "Own your domain", d: "Connect a custom URL in two clicks. SSL handled, always." },
-  ];
-
-  const testimonials = [
-    { name: "Lena Park", role: "Florist · Brooklyn", quote: "I made my whole shop website on a Tuesday afternoon. It looks better than what my friend paid four thousand for." },
-    { name: "Hiro Tanaka", role: "Photographer · Kyoto", quote: "The type choices alone sold me. Finally something that doesn't look like every other landing page on the internet." },
-    { name: "Aisha Rahman", role: "Founder · Maven Co.", quote: "We replaced three tools with this. Our team ships pages in hours, not sprints." },
   ];
 
   const faqs = [
