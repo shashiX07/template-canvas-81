@@ -1,23 +1,26 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  Search, 
-  Heart, 
-  MessageCircle, 
-  Share2, 
-  Eye, 
+import { Separator } from "@/components/ui/separator";
+import {
+  Search,
+  Heart,
+  MessageCircle,
+  Share2,
+  Eye,
   TrendingUp,
   Clock,
   Sparkles,
-  Plus
+  Plus,
+  Bookmark,
+  MoreHorizontal,
+  Send,
+  Hash,
+  Users,
 } from "lucide-react";
 import { webieStorage, type Webie } from "@/lib/webieStorage";
 import { userStorage } from "@/lib/storage";
@@ -28,11 +31,12 @@ const Webies = () => {
   const navigate = useNavigate();
   const [webies, setWebies] = useState<Webie[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("trending");
+  const [activeTab, setActiveTab] = useState<"trending" | "recent" | "all">("trending");
   const currentUser = userStorage.getCurrentUser();
 
   useEffect(() => {
     loadWebies();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, searchQuery]);
 
   const loadWebies = () => {
@@ -56,10 +60,9 @@ const Webies = () => {
       navigate("/auth");
       return;
     }
-    const webie = webies.find(w => w.id === webieId);
+    const webie = webies.find((w) => w.id === webieId);
     const wasLiked = webie?.likes.includes(currentUser.id);
     webieStorage.toggleLike(webieId, currentUser.id);
-    // Send notification if liking (not unliking)
     if (webie && !wasLiked && webie.userId !== currentUser.id) {
       notificationStorage.notifyLike(
         webie.userId,
@@ -74,18 +77,13 @@ const Webies = () => {
   const handleShare = async (webie: Webie, e: React.MouseEvent) => {
     e.stopPropagation();
     const url = `${window.location.origin}/webie/${webie.id}`;
-    
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: webie.title,
-          text: webie.description,
-          url: url,
-        });
+        await navigator.share({ title: webie.title, text: webie.description, url });
         webieStorage.incrementShares(webie.id);
         loadWebies();
-      } catch (err) {
-        // User cancelled share
+      } catch {
+        /* cancelled */
       }
     } else {
       await navigator.clipboard.writeText(url);
@@ -104,223 +102,373 @@ const Webies = () => {
   const timeAgo = (date: string): string => {
     const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
     if (seconds < 60) return "just now";
-    if (seconds < 3600) return Math.floor(seconds / 60) + "m ago";
-    if (seconds < 86400) return Math.floor(seconds / 3600) + "h ago";
-    if (seconds < 604800) return Math.floor(seconds / 86400) + "d ago";
+    if (seconds < 3600) return Math.floor(seconds / 60) + "m";
+    if (seconds < 86400) return Math.floor(seconds / 3600) + "h";
+    if (seconds < 604800) return Math.floor(seconds / 86400) + "d";
     return new Date(date).toLocaleDateString();
   };
 
+  const trendingTags = Array.from(
+    new Set(webies.flatMap((w) => w.tags))
+  ).slice(0, 6);
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-feed">
       <Header />
-      
-      {/* Hero Section */}
-      <section className="relative py-16 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-secondary/10" />
-        <div className="container mx-auto px-4 relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center max-w-3xl mx-auto"
-          >
-            <Badge variant="secondary" className="mb-4">
-              <Sparkles className="w-3 h-3 mr-1" />
-              Community Showcase
-            </Badge>
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              Discover Amazing Webies
-            </h1>
-            <p className="text-lg text-muted-foreground mb-8">
-              Explore, like, and share beautiful templates created by our community
-            </p>
-            
-            {/* Search Bar */}
-            <div className="relative max-w-xl mx-auto">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                placeholder="Search webies by title, tags, or creator..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 h-12 text-lg rounded-full border-2 focus:border-primary"
-              />
-            </div>
-          </motion.div>
-        </div>
-      </section>
 
-      {/* Main Content */}
-      <section className="py-8">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="bg-muted/50">
-                <TabsTrigger value="trending" className="gap-2">
-                  <TrendingUp className="w-4 h-4" />
-                  Trending
-                </TabsTrigger>
-                <TabsTrigger value="recent" className="gap-2">
-                  <Clock className="w-4 h-4" />
-                  Recent
-                </TabsTrigger>
-                <TabsTrigger value="all" className="gap-2">
-                  <Sparkles className="w-4 h-4" />
-                  All
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-
-            {currentUser && (
-              <Button onClick={() => navigate("/webie/create")} className="gap-2">
-                <Plus className="w-4 h-4" />
-                Create Webie
-              </Button>
-            )}
+      <div className="max-w-[1128px] mx-auto px-4 py-6">
+        {/* Search bar (mobile) */}
+        <div className="md:hidden mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-feed-muted" />
+            <Input
+              placeholder="Search webies..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-10 bg-feed-surface border-feed-border text-feed-text"
+            />
           </div>
+        </div>
 
-          {/* Webies Grid */}
-          <AnimatePresence mode="wait">
-            {webies.length === 0 ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center py-20"
+        <div className="grid grid-cols-1 md:grid-cols-[225px_1fr] lg:grid-cols-[225px_1fr_300px] gap-6">
+          {/* LEFT SIDEBAR — profile card */}
+          <aside className="hidden md:block space-y-2">
+            <div className="bg-feed-surface border border-feed-border rounded-lg overflow-hidden">
+              <div className="h-14 bg-feed-hover" />
+              <div className="px-4 pb-4 -mt-8">
+                <Avatar className="w-16 h-16 border-2 border-feed-surface">
+                  <AvatarImage src={currentUser?.avatar} />
+                  <AvatarFallback className="bg-feed-hover text-feed-text">
+                    {currentUser?.name?.charAt(0).toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <h3 className="mt-3 font-semibold text-feed-text text-base leading-tight">
+                  {currentUser?.name || "Welcome"}
+                </h3>
+                <p className="text-xs text-feed-muted mt-1">
+                  {currentUser ? "Webie Creator" : "Sign in to share your webies"}
+                </p>
+              </div>
+              <Separator className="bg-feed-border" />
+              <div className="px-4 py-3 space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-feed-muted">Profile views</span>
+                  <span className="text-feed-accent font-semibold">—</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-feed-muted">Webies</span>
+                  <span className="text-feed-accent font-semibold">
+                    {currentUser ? webieStorage.getByUserId(currentUser.id).length : 0}
+                  </span>
+                </div>
+              </div>
+              <Separator className="bg-feed-border" />
+              <button
+                onClick={() => currentUser ? navigate("/profile") : navigate("/auth")}
+                className="w-full px-4 py-2 text-xs font-semibold text-feed-text hover:bg-feed-hover transition-colors text-left flex items-center gap-2"
               >
-                <Sparkles className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
-                <h3 className="text-xl font-semibold mb-2">No webies found</h3>
-                <p className="text-muted-foreground mb-6">
-                  Be the first to share your creation with the community
+                <Bookmark className="w-3.5 h-3.5" />
+                My items
+              </button>
+            </div>
+
+            <div className="bg-feed-surface border border-feed-border rounded-lg p-4">
+              <p className="text-xs text-feed-muted mb-2">Recent</p>
+              <div className="space-y-2">
+                {trendingTags.slice(0, 4).map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => setSearchQuery(tag)}
+                    className="flex items-center gap-2 text-xs text-feed-text hover:text-feed-accent transition-colors w-full text-left"
+                  >
+                    <Hash className="w-3 h-3 text-feed-muted" />
+                    <span className="truncate">{tag}</span>
+                  </button>
+                ))}
+                {trendingTags.length === 0 && (
+                  <p className="text-xs text-feed-muted">No tags yet</p>
+                )}
+              </div>
+            </div>
+          </aside>
+
+          {/* MAIN FEED */}
+          <main className="space-y-2">
+            {/* Composer */}
+            <div className="bg-feed-surface border border-feed-border rounded-lg p-3">
+              <div className="flex items-center gap-2">
+                <Avatar className="w-12 h-12 shrink-0">
+                  <AvatarImage src={currentUser?.avatar} />
+                  <AvatarFallback className="bg-feed-hover text-feed-text">
+                    {currentUser?.name?.charAt(0).toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <button
+                  onClick={() => (currentUser ? navigate("/webie/create") : navigate("/auth"))}
+                  className="flex-1 h-12 px-4 text-left rounded-full border border-feed-border text-feed-muted text-sm font-medium hover:bg-feed-hover transition-colors"
+                >
+                  Share a new webie...
+                </button>
+              </div>
+              <div className="flex items-center justify-around mt-2 pt-2">
+                <button
+                  onClick={() => (currentUser ? navigate("/webie/create") : navigate("/auth"))}
+                  className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-feed-muted hover:bg-feed-hover transition-colors"
+                >
+                  <Plus className="w-5 h-5 text-feed-accent" />
+                  Create
+                </button>
+                <button
+                  onClick={() => setActiveTab("trending")}
+                  className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-feed-muted hover:bg-feed-hover transition-colors"
+                >
+                  <TrendingUp className="w-5 h-5 text-feed-accent" />
+                  Trending
+                </button>
+                <button
+                  onClick={() => setActiveTab("recent")}
+                  className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-feed-muted hover:bg-feed-hover transition-colors"
+                >
+                  <Clock className="w-5 h-5 text-feed-accent" />
+                  Recent
+                </button>
+              </div>
+            </div>
+
+            {/* Sort row */}
+            <div className="flex items-center gap-3 px-1">
+              <Separator className="flex-1 bg-feed-border" />
+              <div className="flex items-center gap-2 text-xs text-feed-muted">
+                <span>Sort by:</span>
+                <select
+                  value={activeTab}
+                  onChange={(e) => setActiveTab(e.target.value as typeof activeTab)}
+                  className="bg-transparent text-feed-text font-semibold focus:outline-none cursor-pointer"
+                >
+                  <option value="trending">Trending</option>
+                  <option value="recent">Most recent</option>
+                  <option value="all">All</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Posts */}
+            {webies.length === 0 ? (
+              <div className="bg-feed-surface border border-feed-border rounded-lg py-16 text-center">
+                <Sparkles className="w-12 h-12 mx-auto text-feed-muted mb-3" />
+                <h3 className="text-base font-semibold text-feed-text mb-1">No webies found</h3>
+                <p className="text-sm text-feed-muted mb-5">
+                  Be the first to share your creation
                 </p>
                 {currentUser && (
-                  <Button onClick={() => navigate("/webie/create")}>
-                    Create Your First Webie
+                  <Button
+                    onClick={() => navigate("/webie/create")}
+                    className="bg-feed-accent hover:bg-feed-accent-hover text-white rounded-full"
+                  >
+                    Create your first webie
                   </Button>
                 )}
-              </motion.div>
+              </div>
             ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-              >
-                {webies.map((webie, index) => (
-                  <motion.div
+              webies.map((webie) => {
+                const liked = webie.likes.includes(currentUser?.id || "");
+                return (
+                  <article
                     key={webie.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
+                    className="bg-feed-surface border border-feed-border rounded-lg overflow-hidden"
                   >
-                    <Card 
-                      className="group cursor-pointer overflow-hidden hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/20"
-                      onClick={() => navigate(`/webie/${webie.id}`)}
-                    >
-                      {/* Thumbnail */}
-                      <div className="relative aspect-video overflow-hidden bg-muted">
-                        <img
-                          src={webie.thumbnail}
-                          alt={webie.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        
-                        {/* Quick Actions Overlay */}
-                        <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant={webie.likes.includes(currentUser?.id || "") ? "default" : "secondary"}
-                              className="h-8 gap-1"
-                              onClick={(e) => handleLike(webie.id, e)}
-                            >
-                              <Heart className={`w-4 h-4 ${webie.likes.includes(currentUser?.id || "") ? "fill-current" : ""}`} />
-                              {formatNumber(webie.likes.length)}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              className="h-8 gap-1"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/webie/${webie.id}#comments`);
-                              }}
-                            >
-                              <MessageCircle className="w-4 h-4" />
-                              {formatNumber(webie.comments.length)}
-                            </Button>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            className="h-8"
-                            onClick={(e) => handleShare(webie, e)}
-                          >
-                            <Share2 className="w-4 h-4" />
-                          </Button>
+                    {/* Author */}
+                    <div className="flex items-start justify-between p-3">
+                      <button
+                        onClick={() => navigate(`/profile/${webie.userId}`)}
+                        className="flex items-start gap-2 group"
+                      >
+                        <Avatar className="w-12 h-12">
+                          <AvatarImage src={webie.userAvatar} />
+                          <AvatarFallback className="bg-feed-hover text-feed-text">
+                            {webie.userName.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="text-left">
+                          <p className="font-semibold text-sm text-feed-text group-hover:text-feed-accent group-hover:underline">
+                            {webie.userName}
+                          </p>
+                          <p className="text-xs text-feed-muted">Webie creator</p>
+                          <p className="text-xs text-feed-muted">
+                            {timeAgo(webie.createdAt)} • 🌐
+                          </p>
                         </div>
-                      </div>
+                      </button>
+                      <button className="p-1.5 rounded-full hover:bg-feed-hover transition-colors">
+                        <MoreHorizontal className="w-5 h-5 text-feed-muted" />
+                      </button>
+                    </div>
 
-                      <CardContent className="p-4">
-                        {/* Creator Info */}
-                        <div className="flex items-center gap-3 mb-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={webie.userAvatar} />
-                            <AvatarFallback>{webie.userName.charAt(0).toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm truncate">{webie.userName}</p>
-                            <p className="text-xs text-muted-foreground">{timeAgo(webie.createdAt)}</p>
-                          </div>
-                        </div>
-
-                        {/* Title & Description */}
-                        <h3 className="font-semibold text-lg mb-1 line-clamp-1 group-hover:text-primary transition-colors">
-                          {webie.title}
-                        </h3>
-                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                          {webie.description}
-                        </p>
-
-                        {/* Tags */}
-                        <div className="flex flex-wrap gap-1 mb-3">
-                          {webie.tags.slice(0, 3).map((tag) => (
-                            <Badge key={tag} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
+                    {/* Text content */}
+                    <div className="px-4 pb-3">
+                      <h3
+                        onClick={() => navigate(`/webie/${webie.id}`)}
+                        className="font-semibold text-feed-text text-[15px] mb-1 cursor-pointer hover:text-feed-accent"
+                      >
+                        {webie.title}
+                      </h3>
+                      <p className="text-sm text-feed-text leading-relaxed whitespace-pre-wrap">
+                        {webie.description}
+                      </p>
+                      {webie.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-x-1 gap-y-0.5 mt-2">
+                          {webie.tags.map((tag) => (
+                            <button
+                              key={tag}
+                              onClick={() => setSearchQuery(tag)}
+                              className="text-sm text-feed-accent hover:underline font-medium"
+                            >
+                              #{tag}
+                            </button>
                           ))}
-                          {webie.tags.length > 3 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{webie.tags.length - 3}
-                            </Badge>
-                          )}
                         </div>
+                      )}
+                    </div>
 
-                        {/* Stats */}
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Heart className="w-4 h-4" />
-                            {formatNumber(webie.likes.length)}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <MessageCircle className="w-4 h-4" />
-                            {formatNumber(webie.comments.length)}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Eye className="w-4 h-4" />
-                            {formatNumber(webie.views)}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Share2 className="w-4 h-4" />
-                            {formatNumber(webie.shares)}
-                          </span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
-              </motion.div>
+                    {/* Media */}
+                    <button
+                      onClick={() => navigate(`/webie/${webie.id}`)}
+                      className="block w-full bg-feed-bg border-y border-feed-border"
+                    >
+                      <img
+                        src={webie.thumbnail}
+                        alt={webie.title}
+                        className="w-full max-h-[520px] object-cover"
+                      />
+                    </button>
+
+                    {/* Reactions counter */}
+                    <div className="flex items-center justify-between px-4 py-2 text-xs text-feed-muted">
+                      <div className="flex items-center gap-1">
+                        <span className="inline-flex w-4 h-4 rounded-full bg-feed-accent items-center justify-center">
+                          <Heart className="w-2.5 h-2.5 text-white fill-white" />
+                        </span>
+                        <span className="hover:text-feed-accent hover:underline cursor-pointer">
+                          {formatNumber(webie.likes.length)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="hover:text-feed-accent hover:underline cursor-pointer">
+                          {formatNumber(webie.comments.length)} comments
+                        </span>
+                        <span>•</span>
+                        <span className="hover:text-feed-accent hover:underline cursor-pointer">
+                          {formatNumber(webie.shares)} shares
+                        </span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1">
+                          <Eye className="w-3 h-3" />
+                          {formatNumber(webie.views)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <Separator className="bg-feed-border" />
+
+                    {/* Action bar */}
+                    <div className="grid grid-cols-4">
+                      <button
+                        onClick={(e) => handleLike(webie.id, e)}
+                        className={`flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-colors hover:bg-feed-hover ${
+                          liked ? "text-feed-accent" : "text-feed-muted"
+                        }`}
+                      >
+                        <Heart className={`w-5 h-5 ${liked ? "fill-current" : ""}`} />
+                        <span className="hidden sm:inline">Like</span>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/webie/${webie.id}#comments`);
+                        }}
+                        className="flex items-center justify-center gap-2 py-3 text-sm font-semibold text-feed-muted transition-colors hover:bg-feed-hover"
+                      >
+                        <MessageCircle className="w-5 h-5" />
+                        <span className="hidden sm:inline">Comment</span>
+                      </button>
+                      <button
+                        onClick={(e) => handleShare(webie, e)}
+                        className="flex items-center justify-center gap-2 py-3 text-sm font-semibold text-feed-muted transition-colors hover:bg-feed-hover"
+                      >
+                        <Share2 className="w-5 h-5" />
+                        <span className="hidden sm:inline">Repost</span>
+                      </button>
+                      <button
+                        onClick={(e) => handleShare(webie, e)}
+                        className="flex items-center justify-center gap-2 py-3 text-sm font-semibold text-feed-muted transition-colors hover:bg-feed-hover"
+                      >
+                        <Send className="w-5 h-5" />
+                        <span className="hidden sm:inline">Send</span>
+                      </button>
+                    </div>
+                  </article>
+                );
+              })
             )}
-          </AnimatePresence>
+          </main>
+
+          {/* RIGHT SIDEBAR */}
+          <aside className="hidden lg:block space-y-2">
+            <div className="bg-feed-surface border border-feed-border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-feed-text">Webies you might like</h3>
+                <Sparkles className="w-4 h-4 text-feed-muted" />
+              </div>
+              <div className="space-y-3">
+                {trendingTags.length === 0 && (
+                  <p className="text-xs text-feed-muted">Nothing here yet.</p>
+                )}
+                {trendingTags.map((tag) => (
+                  <div key={tag} className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-feed-text truncate">#{tag}</p>
+                      <p className="text-xs text-feed-muted">
+                        {webies.filter((w) => w.tags.includes(tag)).length} webies
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setSearchQuery(tag)}
+                      className="shrink-0 text-xs font-semibold text-feed-muted border border-feed-muted/60 rounded-full px-3 py-1 hover:bg-feed-hover hover:text-feed-text transition-colors"
+                    >
+                      Follow
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <Separator className="bg-feed-border my-3" />
+              <button className="text-xs font-semibold text-feed-muted hover:text-feed-text">
+                Show more
+              </button>
+            </div>
+
+            <div className="bg-feed-surface border border-feed-border rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-feed-text mb-3 flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Today's top creators
+              </h3>
+              <p className="text-xs text-feed-muted">
+                Discover and follow the most active members of the community.
+              </p>
+              <Button
+                variant="ghost"
+                className="mt-3 h-8 px-3 text-xs text-feed-muted hover:bg-feed-hover hover:text-feed-text rounded-full"
+                onClick={() => navigate("/templates")}
+              >
+                Explore templates →
+              </Button>
+            </div>
+
+            <p className="text-[11px] text-feed-muted px-2">
+              About · Accessibility · Help · Privacy · Ads
+            </p>
+          </aside>
         </div>
-      </section>
+      </div>
     </div>
   );
 };
