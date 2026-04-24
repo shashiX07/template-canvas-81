@@ -115,101 +115,144 @@ export default function Index() {
       <Header />
 
       {/* ═══ HERO ═══ */}
-      <section ref={heroRef} className="relative min-h-screen flex flex-col justify-center pt-36 md:pt-40 pb-32 md:pb-40 bg-background">
-        {/* floating hero collage — desktop only */}
-        <div className="absolute inset-0 pointer-events-none hidden lg:block overflow-hidden">
-          <motion.div
-            initial={{ opacity: 0, y: 40, rotate: -6 }}
-            animate={{ opacity: 1, y: 0, rotate: -6 }}
-            transition={{ duration: 1.2, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            style={{ y: useTransform(scrollYProgress, [0, 1], [0, -120]) }}
-            className="absolute top-[18%] right-[6%] w-56 xl:w-64 aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl ring-1 ring-foreground/10"
-          >
-            <img src={heroCollage1} alt="" className="w-full h-full object-cover" />
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 60, rotate: 8 }}
-            animate={{ opacity: 1, y: 0, rotate: 8 }}
-            transition={{ duration: 1.2, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            style={{ y: useTransform(scrollYProgress, [0, 1], [0, -200]) }}
-            className="absolute bottom-[12%] right-[22%] w-44 xl:w-52 aspect-square rounded-2xl overflow-hidden shadow-2xl ring-1 ring-foreground/10"
-          >
-            <img src={heroCollage2} alt="" className="w-full h-full object-cover" />
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 50, rotate: -10 }}
-            animate={{ opacity: 1, y: 0, rotate: -10 }}
-            transition={{ duration: 1.2, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            style={{ y: useTransform(scrollYProgress, [0, 1], [0, -80]) }}
-            className="absolute top-[28%] left-[4%] w-40 xl:w-48 aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl ring-1 ring-foreground/10 opacity-90"
-          >
-            <img src={heroCollage4} alt="" className="w-full h-full object-cover" />
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 30, rotate: 5 }}
-            animate={{ opacity: 1, y: 0, rotate: 5 }}
-            transition={{ duration: 1.2, delay: 0.9, ease: [0.22, 1, 0.36, 1] }}
-            style={{ y: useTransform(scrollYProgress, [0, 1], [0, -160]) }}
-            className="absolute bottom-[20%] left-[14%] w-52 xl:w-60 aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl ring-1 ring-foreground/10"
-          >
-            <img src={heroCollage3} alt="" className="w-full h-full object-cover" />
-          </motion.div>
-        </div>
+      <section ref={heroRef} className="relative min-h-screen flex flex-col justify-center pt-32 md:pt-36 pb-24 md:pb-32 bg-background overflow-hidden">
+        {/* soft ambient blob */}
+        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-primary/15 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 -left-40 w-[500px] h-[500px] rounded-full bg-primary/10 blur-3xl pointer-events-none" />
 
         <motion.div style={{ y: heroY, opacity: heroOpacity }} className="container px-6 md:px-10 relative z-10">
-          {/* eyebrow */}
-          <Reveal>
-            <div className="flex items-center gap-3 mb-12">
-              <span className="w-12 h-px bg-foreground" />
-              <span className="font-mono-accent text-xs uppercase tracking-[0.25em] text-foreground/70">
-                Webilio · Est. 2024
-              </span>
+          <div className="grid lg:grid-cols-12 gap-10 lg:gap-16 items-center">
+            {/* LEFT — copy column */}
+            <div className="lg:col-span-7">
+              <Reveal>
+                <div className="flex items-center gap-3 mb-10">
+                  <span className="w-12 h-px bg-foreground" />
+                  <span className="font-mono-accent text-xs uppercase tracking-[0.25em] text-foreground/70">
+                    Webilio · A quieter web
+                  </span>
+                </div>
+              </Reveal>
+
+              <Reveal delay={0.1}>
+                <h1 className="font-display text-[clamp(2.75rem,8vw,7.5rem)] font-light leading-[1.02] tracking-tight">
+                  Make a website
+                  <br />
+                  <span className="italic font-normal">worth</span>{" "}
+                  <span className="relative inline-block">
+                    <motion.span
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: 1 }}
+                      transition={{ duration: 0.9, delay: 1, ease: [0.22, 1, 0.36, 1] }}
+                      style={{ originX: 0 }}
+                      className="absolute -inset-x-3 inset-y-2 bg-primary/85 -z-10 rounded-full"
+                    />
+                    <span className="font-medium text-primary-foreground px-2 relative">looking</span>
+                  </span>
+                  <br />
+                  <span className="inline-flex items-baseline gap-4">
+                    at.
+                    <motion.span
+                      animate={{ opacity: [1, 0.2, 1] }}
+                      transition={{ duration: 1.2, repeat: Infinity }}
+                      className="inline-block w-3 h-12 md:w-4 md:h-20 bg-foreground translate-y-1"
+                    />
+                  </span>
+                </h1>
+              </Reveal>
+
+              <Reveal delay={0.35}>
+                <p className="mt-10 md:mt-14 text-lg md:text-xl text-foreground/70 leading-[1.8] max-w-lg">
+                  A builder for the people who actually <em className="italic">care</em> how things look. No templates that scream "made online." No gradients pretending to be design. Just thoughtful tools and beautiful type.
+                </p>
+              </Reveal>
+
+              <Reveal delay={0.5}>
+                <div className="mt-10 flex flex-col sm:flex-row gap-4">
+                  <Button
+                    onClick={() => navigate('/templates')}
+                    className="rounded-full bg-foreground text-background hover:bg-foreground/90 px-8 h-14 text-base font-medium group"
+                  >
+                    Start building
+                    <ArrowUpRight className="ml-2 w-4 h-4 group-hover:rotate-45 transition-transform duration-300" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => document.getElementById('work')?.scrollIntoView({ behavior: 'smooth' })}
+                    className="rounded-full px-8 h-14 text-base font-medium border border-foreground/20 hover:bg-foreground/5"
+                  >
+                    See the work
+                  </Button>
+                </div>
+              </Reveal>
+
+              {/* mini ticker of feelings */}
+              <Reveal delay={0.7}>
+                <div className="mt-14 flex items-center gap-6 font-mono-accent text-[11px] uppercase tracking-[0.25em] text-foreground/50">
+                  <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  <span>Built today by</span>
+                  <span className="font-display italic text-base text-foreground normal-case tracking-normal">
+                    a florist · a poet · a wedding planner · a baker
+                  </span>
+                </div>
+              </Reveal>
             </div>
-          </Reveal>
 
-          {/* headline */}
-          <Reveal delay={0.1}>
-            <h1 className="font-display text-[clamp(2.75rem,9vw,9rem)] font-light leading-[1.02] tracking-tight max-w-[14ch]">
-              Make a website
-              <br />
-              <span className="italic font-normal">worth</span>{" "}
-              <span className="relative inline-block">
-                <span className="absolute -inset-x-3 inset-y-2 bg-primary/80 -z-10 rounded-full" />
-                <span className="font-medium text-primary-foreground px-2">looking</span>
-              </span>
-              <br />at.
-            </h1>
-          </Reveal>
-
-          <div className="grid md:grid-cols-12 gap-10 mt-20 md:mt-24 items-end">
-            <Reveal delay={0.3} className="md:col-span-6">
-              <p className="text-lg md:text-xl text-foreground/70 leading-[1.8] max-w-md">
-                A builder for the people who actually care how things look. No templates that scream "made online." No gradients pretending to be design. Just thoughtful tools and beautiful type.
-              </p>
-            </Reveal>
-
-            <Reveal delay={0.4} className="md:col-span-6 flex flex-col sm:flex-row gap-4 md:justify-end">
-              <Button
-                onClick={() => navigate('/templates')}
-                className="rounded-full bg-foreground text-background hover:bg-foreground/90 px-8 h-14 text-base font-medium group"
+            {/* RIGHT — image composition */}
+            <div className="lg:col-span-5 relative h-[460px] md:h-[560px] lg:h-[640px]">
+              {/* primary portrait */}
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1.1, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                style={{ y: useTransform(scrollYProgress, [0, 1], [0, -60]) }}
+                className="absolute top-0 right-0 w-[78%] aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl ring-1 ring-foreground/10"
               >
-                Start building
-                <ArrowUpRight className="ml-2 w-4 h-4 group-hover:rotate-45 transition-transform duration-300" />
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => document.getElementById('work')?.scrollIntoView({ behavior: 'smooth' })}
-                className="rounded-full px-8 h-14 text-base font-medium border border-foreground/20 hover:bg-foreground/5"
+                <img src={heroPortrait} alt="A maker at work" className="w-full h-full object-cover" />
+                {/* tiny tag */}
+                <div className="absolute top-4 left-4 bg-background/90 backdrop-blur px-3 py-1.5 rounded-full font-mono-accent text-[10px] uppercase tracking-[0.2em]">
+                  · Live · she's editing
+                </div>
+              </motion.div>
+
+              {/* secondary card — bottom left */}
+              <motion.div
+                initial={{ opacity: 0, y: 40, rotate: -8 }}
+                animate={{ opacity: 1, y: 0, rotate: -6 }}
+                transition={{ duration: 1.1, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                style={{ y: useTransform(scrollYProgress, [0, 1], [0, -140]) }}
+                className="absolute bottom-0 left-0 w-[55%] aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl ring-1 ring-foreground/10 hidden md:block"
               >
-                See the work
-              </Button>
-            </Reveal>
+                <img src={heroCollage1} alt="" className="w-full h-full object-cover" />
+              </motion.div>
+
+              {/* small note card */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.85, rotate: 8 }}
+                animate={{ opacity: 1, scale: 1, rotate: 6 }}
+                transition={{ duration: 0.9, delay: 1.0, ease: [0.22, 1, 0.36, 1] }}
+                style={{ y: useTransform(scrollYProgress, [0, 1], [0, 60]) }}
+                className="absolute bottom-[18%] right-[-2%] md:right-[-6%] bg-background border border-foreground/10 rounded-2xl p-5 shadow-2xl max-w-[200px] hidden sm:block"
+              >
+                <div className="font-display italic text-base leading-tight text-foreground">
+                  "It looked like ours from the very first edit."
+                </div>
+                <div className="mt-3 flex items-center gap-2 font-mono-accent text-[10px] uppercase tracking-[0.2em] text-foreground/50">
+                  <span className="w-6 h-px bg-foreground/30" />
+                  Eden, florist
+                </div>
+              </motion.div>
+            </div>
           </div>
         </motion.div>
 
         {/* bottom marker */}
-        <div className="absolute bottom-8 left-0 right-0 container px-6 md:px-10 flex justify-between items-end font-mono-accent text-xs uppercase tracking-[0.25em] text-foreground/50">
-          <span>↓ Scroll</span>
+        <div className="absolute bottom-6 left-0 right-0 container px-6 md:px-10 flex justify-between items-end font-mono-accent text-xs uppercase tracking-[0.25em] text-foreground/50">
+          <motion.span
+            animate={{ y: [0, 6, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          >
+            ↓ Scroll, slowly
+          </motion.span>
           <span>No.001 / Index</span>
         </div>
       </section>
