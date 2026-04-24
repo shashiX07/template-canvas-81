@@ -15,6 +15,10 @@ import heroCollage2 from "@/assets/hero-collage-2.jpg";
 import heroCollage3 from "@/assets/hero-collage-3.jpg";
 import heroCollage4 from "@/assets/hero-collage-4.jpg";
 import sectionTexture from "@/assets/section-texture.jpg";
+import heroPortrait from "@/assets/hero-portrait.jpg";
+import letterStill from "@/assets/letter-still.jpg";
+import handsPolaroid from "@/assets/hands-polaroid.jpg";
+import windowLight from "@/assets/window-light.jpg";
 
 /* ─── Motion primitives ───────────────────────────── */
 
