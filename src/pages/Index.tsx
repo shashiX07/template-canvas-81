@@ -401,6 +401,129 @@ export default function Index() {
         </Reveal>
       </section>
 
+      {/* ═══ LETTER / EMOTIONAL MOMENT ═══ */}
+      <section className="py-32 md:py-40 border-t border-foreground/10 relative overflow-hidden">
+        <div className="container px-6 md:px-10">
+          <div className="grid md:grid-cols-12 gap-12 md:gap-16 items-center">
+            <Reveal className="md:col-span-6 md:col-start-1">
+              <div className="relative">
+                <motion.div
+                  initial={{ rotate: -3 }}
+                  whileInView={{ rotate: -2 }}
+                  whileHover={{ rotate: 0, scale: 1.02 }}
+                  transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  className="overflow-hidden rounded-2xl shadow-2xl ring-1 ring-foreground/10"
+                >
+                  <img src={letterStill} alt="A handwritten letter" loading="lazy" className="w-full h-auto" />
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 20, rotate: 4 }}
+                  whileInView={{ opacity: 1, y: 0, rotate: 6 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.9, delay: 0.3 }}
+                  className="absolute -bottom-6 -right-4 md:-right-8 bg-background border border-foreground/10 rounded-2xl p-4 shadow-xl max-w-[180px]"
+                >
+                  <div className="font-mono-accent text-[10px] uppercase tracking-[0.2em] text-foreground/50">
+                    Postmarked
+                  </div>
+                  <div className="font-display italic text-lg mt-1">
+                    For the people you love.
+                  </div>
+                </motion.div>
+              </div>
+            </Reveal>
+
+            <div className="md:col-span-5 md:col-start-8">
+              <Reveal>
+                <div className="flex items-center gap-3 mb-6">
+                  <span className="w-12 h-px bg-foreground" />
+                  <span className="font-mono-accent text-xs uppercase tracking-[0.25em] text-foreground/70">
+                    A small note
+                  </span>
+                </div>
+              </Reveal>
+              <Reveal delay={0.1}>
+                <h2 className="font-display text-4xl md:text-6xl font-light leading-[1.05]">
+                  We're not building <span className="italic">software</span>.
+                </h2>
+              </Reveal>
+              <Reveal delay={0.2}>
+                <p className="mt-8 text-foreground/70 text-lg leading-[1.9]">
+                  We're building the place where you'll announce your wedding. Where you'll show your grandmother the cake you made. Where strangers will find your studio, your shop, your name — and feel something before they read a single word.
+                </p>
+              </Reveal>
+              <Reveal delay={0.3}>
+                <p className="mt-6 font-display italic text-2xl text-foreground/80 leading-snug">
+                  So we made it slow. We made it quiet. We made it <span className="text-primary not-italic font-medium">yours</span>.
+                </p>
+              </Reveal>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ IN MOTION / DRIFTING GALLERY ═══ */}
+      <section className="py-24 md:py-32 bg-foreground text-background overflow-hidden border-y border-foreground/20">
+        <div className="container px-6 md:px-10 mb-16 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+          <Reveal>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="w-12 h-px bg-background" />
+              <span className="font-mono-accent text-xs uppercase tracking-[0.25em]">In motion</span>
+            </div>
+            <h2 className="font-display text-4xl md:text-6xl font-light leading-[1.05] max-w-2xl">
+              A few <span className="italic">small things</span> that move us.
+            </h2>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <p className="font-mono-accent text-xs uppercase tracking-[0.25em] text-background/60 max-w-xs">
+              Hover to slow time
+            </p>
+          </Reveal>
+        </div>
+
+        {/* drifting row */}
+        <div className="group relative">
+          <motion.div
+            className="flex gap-6 md:gap-8 px-6 md:px-10"
+            animate={{ x: ["0%", "-50%"] }}
+            transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+            style={{ width: "max-content" }}
+          >
+            {[
+              { img: handsPolaroid, t: "Polaroid in soft light", n: "I." },
+              { img: windowLight, t: "Linen at the window", n: "II." },
+              { img: heroCollage2, t: "A still morning", n: "III." },
+              { img: heroCollage3, t: "Where the day begins", n: "IV." },
+              { img: letterStill, t: "Ink, slowly", n: "V." },
+              { img: heroCollage4, t: "Hands at work", n: "VI." },
+              { img: handsPolaroid, t: "Polaroid in soft light", n: "I." },
+              { img: windowLight, t: "Linen at the window", n: "II." },
+              { img: heroCollage2, t: "A still morning", n: "III." },
+              { img: heroCollage3, t: "Where the day begins", n: "IV." },
+              { img: letterStill, t: "Ink, slowly", n: "V." },
+              { img: heroCollage4, t: "Hands at work", n: "VI." },
+            ].map((it, i) => (
+              <div key={i} className="shrink-0 w-[260px] md:w-[320px]">
+                <div className="overflow-hidden rounded-2xl aspect-[3/4] bg-background/5">
+                  <motion.img
+                    src={it.img}
+                    alt={it.t}
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.8 }}
+                  />
+                </div>
+                <div className="mt-4 flex items-baseline justify-between gap-3 font-mono-accent text-[10px] uppercase tracking-[0.25em] text-background/60">
+                  <span>{it.n}</span>
+                  <span className="font-display italic text-base text-background normal-case tracking-normal">{it.t}</span>
+                </div>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
       {/* ═══ PROCESS / KINETIC LIST ═══ */}
       <section className="py-32 border-t border-foreground/10">
         <div className="container px-6 md:px-10 mb-20">
