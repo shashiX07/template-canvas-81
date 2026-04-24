@@ -273,7 +273,7 @@ const Webies = () => {
                             onClick={() => toggleTag(tag)}
                             className={`text-xs font-medium px-2.5 py-1 rounded-full border transition-colors ${
                               active
-                                ? "bg-feed-accent text-white border-feed-accent"
+                                ? "bg-feed-accent text-feed-text border-feed-accent"
                                 : "bg-feed-bg text-feed-text border-feed-border hover:border-feed-accent hover:text-feed-accent"
                             }`}
                           >
@@ -330,7 +330,7 @@ const Webies = () => {
                 </button>
                 <Button
                   onClick={() => (currentUser ? navigate("/webie/create") : navigate("/auth"))}
-                  className="bg-feed-accent hover:bg-feed-accent-hover text-white rounded-full h-10 px-4 hidden sm:inline-flex"
+                  className="bg-feed-accent hover:bg-feed-accent-hover text-feed-text rounded-full h-10 px-4 hidden sm:inline-flex"
                 >
                   <Plus className="w-4 h-4 mr-1" />
                   Create
@@ -370,7 +370,7 @@ const Webies = () => {
                 {currentUser && (
                   <Button
                     onClick={() => navigate("/webie/create")}
-                    className="bg-feed-accent hover:bg-feed-accent-hover text-white rounded-full"
+                    className="bg-feed-accent hover:bg-feed-accent-hover text-feed-text rounded-full"
                   >
                     Create your first webie
                   </Button>
@@ -526,7 +526,7 @@ const Webies = () => {
                       </p>
                       <Button
                         onClick={() => navigate("/auth")}
-                        className="w-full bg-feed-accent hover:bg-feed-accent-hover text-white rounded-full font-semibold"
+                        className="w-full bg-feed-accent hover:bg-feed-accent-hover text-feed-text rounded-full font-semibold"
                       >
                         Sign up — it's free
                       </Button>
@@ -587,7 +587,7 @@ const Webies = () => {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleFollow(c.id, c.name)}
-                                className="h-7 px-3 text-xs rounded-full border-feed-accent text-feed-accent hover:bg-feed-accent hover:text-white"
+                                className="h-7 px-3 text-xs rounded-full border-feed-accent text-feed-accent hover:bg-feed-accent hover:text-feed-text"
                               >
                                 <Plus className="w-3 h-3 mr-0.5" />
                                 Follow
