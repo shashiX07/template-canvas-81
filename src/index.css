@@ -10,36 +10,36 @@
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 217 91% 50%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 217 91% 65%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
+    --primary: 45 100% 51%;
+    --primary-foreground: 45 100% 10%;
+    --primary-glow: 48 100% 62%;
+    --secondary: 48 100% 96%;
+    --secondary-foreground: 45 100% 15%;
+    --muted: 48 30% 96%;
+    --muted-foreground: 45 10% 40%;
+    --accent: 48 100% 92%;
+    --accent-foreground: 45 100% 18%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 217 91% 50%;
+    --border: 48 30% 88%;
+    --input: 48 30% 88%;
+    --ring: 45 100% 51%;
     --radius: 0.75rem;
     
-    /* Solid blue surfaces — no gradients */
-    --gradient-primary: hsl(217 91% 50%);
-    --gradient-hero: hsl(210 20% 98%);
-    --gradient-mesh: hsl(210 20% 98%);
+    /* Solid yellow surfaces — no gradients */
+    --gradient-primary: hsl(45 100% 51%);
+    --gradient-hero: hsl(48 100% 98%);
+    --gradient-mesh: hsl(48 100% 98%);
     --gradient-card: hsl(0 0% 100%);
-    --gradient-accent: hsl(217 91% 50%);
+    --gradient-accent: hsl(45 100% 51%);
     --gradient-success: hsl(142 76% 36%);
     --gradient-warning: hsl(38 92% 50%);
     
-    /* Blue-tinted shadows */
-    --shadow-elegant: 0 10px 40px -10px hsl(217 91% 50% / 0.25);
-    --shadow-glow: 0 0 60px hsl(217 91% 65% / 0.35);
-    --shadow-card: 0 4px 6px -1px hsl(217 30% 40% / 0.08), 0 2px 4px -2px hsl(217 30% 40% / 0.08);
-    --shadow-card-hover: 0 20px 25px -5px hsl(217 30% 40% / 0.15), 0 8px 10px -6px hsl(217 30% 40% / 0.1);
+    /* Yellow-tinted shadows */
+    --shadow-elegant: 0 10px 40px -10px hsl(45 100% 51% / 0.3);
+    --shadow-glow: 0 0 60px hsl(48 100% 62% / 0.4);
+    --shadow-card: 0 4px 6px -1px hsl(45 50% 30% / 0.08), 0 2px 4px -2px hsl(45 50% 30% / 0.08);
+    --shadow-card-hover: 0 20px 25px -5px hsl(45 50% 30% / 0.18), 0 8px 10px -6px hsl(45 50% 30% / 0.1);
     --shadow-inner-glow: inset 0 1px 0 0 hsl(0 0% 100% / 0.1);
     
     /* Transitions */
@@ -54,14 +54,14 @@
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
     
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 30% 22%;
-    --sidebar-primary: 217 91% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 91% 96%;
-    --sidebar-accent-foreground: 217 91% 30%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 217 91% 50%;
+    --sidebar-background: 48 100% 98%;
+    --sidebar-foreground: 45 30% 22%;
+    --sidebar-primary: 45 100% 51%;
+    --sidebar-primary-foreground: 45 100% 10%;
+    --sidebar-accent: 48 100% 92%;
+    --sidebar-accent-foreground: 45 100% 20%;
+    --sidebar-border: 48 30% 88%;
+    --sidebar-ring: 45 100% 51%;
 
     /* LinkedIn-like neutral feed tokens */
     --feed-bg: 210 14% 95%;
@@ -81,35 +81,35 @@
     --card-foreground: 0 0% 98%;
     --popover: 222 47% 9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 217 91% 70%;
-    --secondary: 217 33% 14%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 217 33% 14%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 33% 14%;
-    --accent-foreground: 0 0% 98%;
+    --primary: 48 100% 58%;
+    --primary-foreground: 45 100% 10%;
+    --primary-glow: 48 100% 70%;
+    --secondary: 45 30% 14%;
+    --secondary-foreground: 48 100% 92%;
+    --muted: 45 20% 14%;
+    --muted-foreground: 45 15% 65%;
+    --accent: 45 30% 18%;
+    --accent-foreground: 48 100% 92%;
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 98%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 217 91% 60%;
+    --border: 45 20% 20%;
+    --input: 45 20% 20%;
+    --ring: 48 100% 58%;
     
-    /* Solid blue dark surfaces — no gradients */
-    --gradient-primary: hsl(217 91% 60%);
-    --gradient-hero: hsl(222 47% 6%);
-    --gradient-mesh: hsl(222 47% 6%);
-    --gradient-card: hsl(222 47% 9%);
-    --gradient-accent: hsl(217 91% 60%);
+    /* Solid yellow dark surfaces — no gradients */
+    --gradient-primary: hsl(48 100% 58%);
+    --gradient-hero: hsl(45 30% 6%);
+    --gradient-mesh: hsl(45 30% 6%);
+    --gradient-card: hsl(45 30% 9%);
+    --gradient-accent: hsl(48 100% 58%);
     --gradient-success: hsl(142 76% 40%);
     --gradient-warning: hsl(38 92% 45%);
     
-    /* Blue-tinted dark shadows */
-    --shadow-elegant: 0 10px 40px -10px hsl(217 91% 60% / 0.4);
-    --shadow-glow: 0 0 60px hsl(217 91% 70% / 0.5);
+    /* Yellow-tinted dark shadows */
+    --shadow-elegant: 0 10px 40px -10px hsl(48 100% 58% / 0.45);
+    --shadow-glow: 0 0 60px hsl(48 100% 70% / 0.55);
     --shadow-card: 0 4px 6px -1px hsl(0 0% 0% / 0.3), 0 2px 4px -2px hsl(0 0% 0% / 0.2);
-    --shadow-card-hover: 0 20px 25px -5px hsl(217 50% 30% / 0.4), 0 8px 10px -6px hsl(217 50% 30% / 0.3);
+    --shadow-card-hover: 0 20px 25px -5px hsl(45 50% 20% / 0.5), 0 8px 10px -6px hsl(45 50% 20% / 0.35);
     
     /* Additional accent colors - dark */
     --success: 142 76% 46%;
@@ -119,14 +119,14 @@
     --info: 199 89% 55%;
     --info-foreground: 0 0% 100%;
     
-    --sidebar-background: 222 47% 8%;
-    --sidebar-foreground: 210 20% 92%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 14%;
-    --sidebar-accent-foreground: 210 20% 96%;
-    --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-background: 45 30% 8%;
+    --sidebar-foreground: 48 30% 92%;
+    --sidebar-primary: 48 100% 58%;
+    --sidebar-primary-foreground: 45 100% 10%;
+    --sidebar-accent: 45 30% 14%;
+    --sidebar-accent-foreground: 48 30% 96%;
+    --sidebar-border: 45 20% 20%;
+    --sidebar-ring: 48 100% 58%;
 
     /* LinkedIn-like dark feed tokens */
     --feed-bg: 0 0% 7%;
