@@ -75,6 +75,16 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        feed: {
+          DEFAULT: "hsl(var(--feed-bg))",
+          surface: "hsl(var(--feed-surface))",
+          border: "hsl(var(--feed-border))",
+          text: "hsl(var(--feed-text))",
+          muted: "hsl(var(--feed-muted))",
+          accent: "hsl(var(--feed-accent))",
+          "accent-hover": "hsl(var(--feed-accent-hover))",
+          hover: "hsl(var(--feed-hover))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
