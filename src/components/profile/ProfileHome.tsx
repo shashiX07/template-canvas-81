@@ -173,7 +173,7 @@ const ProfileHome = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,600px)_320px] gap-6 items-start lg:justify-center">
           {/* ============ CENTER FEED ============ */}
           <main className="space-y-3 min-w-0">
             {/* Composer + filters */}
@@ -193,7 +193,7 @@ const ProfileHome = () => {
                 </button>
                 <Button
                   onClick={() => (currentUser ? navigate("/webie/create") : navigate("/auth"))}
-                  className="bg-feed-accent hover:bg-feed-accent-hover text-white rounded-full h-10 px-4 hidden sm:inline-flex"
+                  className="bg-feed-accent hover:bg-feed-accent-hover text-feed-text rounded-full h-10 px-4 hidden sm:inline-flex"
                 >
                   <Plus className="w-4 h-4 mr-1" />
                   Create
@@ -253,12 +253,12 @@ const ProfileHome = () => {
                         onClick={() => toggleTag(tag)}
                         className={`text-xs font-medium px-2.5 py-1 rounded-full border transition-colors shrink-0 ${
                           active
-                            ? "bg-feed-accent text-white border-feed-accent"
+                            ? "bg-feed-accent text-feed-text border-feed-accent"
                             : "bg-feed-bg text-feed-text border-feed-border hover:border-feed-accent hover:text-feed-accent"
                         }`}
                       >
                         #{tag}
-                        <span className={`ml-1 ${active ? "text-white/80" : "text-feed-muted"}`}>{count}</span>
+                        <span className={`ml-1 ${active ? "text-feed-text/70" : "text-feed-muted"}`}>{count}</span>
                       </button>
                     );
                   })}
@@ -307,7 +307,7 @@ const ProfileHome = () => {
                 {currentUser && (
                   <Button
                     onClick={() => navigate("/webie/create")}
-                    className="bg-feed-accent hover:bg-feed-accent-hover text-white rounded-full"
+                    className="bg-feed-accent hover:bg-feed-accent-hover text-feed-text rounded-full"
                   >
                     Create your first webie
                   </Button>
@@ -385,7 +385,7 @@ const ProfileHome = () => {
                     <div className="flex items-center justify-between px-4 py-2 text-xs text-feed-muted">
                       <div className="flex items-center gap-1">
                         <span className="inline-flex w-4 h-4 rounded-full bg-feed-accent items-center justify-center">
-                          <Heart className="w-2.5 h-2.5 text-white fill-white" />
+                          <Heart className="w-2.5 h-2.5 text-feed-text fill-current" />
                         </span>
                         <span>{formatNumber(webie.likes.length)}</span>
                       </div>
@@ -462,7 +462,7 @@ const ProfileHome = () => {
                       </p>
                       <Button
                         onClick={() => navigate("/auth")}
-                        className="w-full bg-feed-accent hover:bg-feed-accent-hover text-white rounded-full font-semibold"
+                        className="w-full bg-feed-accent hover:bg-feed-accent-hover text-feed-text rounded-full font-semibold"
                       >
                         Sign up — it's free
                       </Button>
@@ -501,7 +501,7 @@ const ProfileHome = () => {
                               size="sm"
                               variant="outline"
                               onClick={() => handleFollow(c.id, c.name)}
-                              className="h-7 px-3 text-xs rounded-full border-feed-accent text-feed-accent hover:bg-feed-accent hover:text-white"
+                              className="h-7 px-3 text-xs rounded-full border-feed-accent text-feed-accent hover:bg-feed-accent hover:text-feed-text"
                             >
                               <Plus className="w-3 h-3 mr-0.5" />
                               Follow

@@ -4,15 +4,15 @@
 
 @layer base {
   :root {
-    --background: 48 33% 96%;
-    --foreground: 0 0% 8%;
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 8%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 8%;
-    --primary: 48 100% 52%;
-    --primary-foreground: 0 0% 8%;
-    --primary-glow: 50 100% 65%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 217 91% 50%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 217 91% 65%;
     --secondary: 210 40% 96%;
     --secondary-foreground: 222 47% 11%;
     --muted: 210 40% 96%;
@@ -23,7 +23,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 48 100% 52%;
+    --ring: 217 91% 50%;
     --radius: 0.75rem;
     
     /* Enhanced gradients */
@@ -73,8 +73,8 @@
     --feed-border: 214 15% 88%;
     --feed-text: 0 0% 13%;
     --feed-muted: 0 0% 38%;
-    --feed-accent: 201 100% 32%;
-    --feed-accent-hover: 201 100% 26%;
+    --feed-accent: 45 100% 45%;
+    --feed-accent-hover: 42 100% 38%;
     --feed-hover: 210 14% 92%;
   }
 
@@ -85,9 +85,9 @@
     --card-foreground: 0 0% 98%;
     --popover: 222 47% 9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 48 100% 55%;
-    --primary-foreground: 0 0% 8%;
-    --primary-glow: 50 100% 68%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 217 91% 70%;
     --secondary: 217 33% 14%;
     --secondary-foreground: 0 0% 98%;
     --muted: 217 33% 14%;
@@ -98,7 +98,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 217 33% 17%;
     --input: 217 33% 17%;
-    --ring: 48 100% 55%;
+    --ring: 217 91% 60%;
     
     /* Enhanced dark gradients */
     --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(280 83% 55%), hsl(262 83% 68%));
@@ -142,8 +142,8 @@
     --feed-border: 0 0% 18%;
     --feed-text: 0 0% 95%;
     --feed-muted: 0 0% 65%;
-    --feed-accent: 201 100% 55%;
-    --feed-accent-hover: 201 100% 65%;
+    --feed-accent: 48 100% 55%;
+    --feed-accent-hover: 48 100% 65%;
     --feed-hover: 0 0% 15%;
   }
 }
