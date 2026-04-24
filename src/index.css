@@ -66,6 +66,16 @@
     --sidebar-accent-foreground: 240 6% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 262 83% 58%;
+
+    /* LinkedIn-like neutral feed tokens */
+    --feed-bg: 210 14% 95%;
+    --feed-surface: 0 0% 100%;
+    --feed-border: 214 15% 88%;
+    --feed-text: 0 0% 13%;
+    --feed-muted: 0 0% 38%;
+    --feed-accent: 201 100% 32%;
+    --feed-accent-hover: 201 100% 26%;
+    --feed-hover: 210 14% 92%;
   }
 
   .dark {
