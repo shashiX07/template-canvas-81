@@ -258,7 +258,7 @@ const ProfileHome = () => {
                         }`}
                       >
                         #{tag}
-                        <span className={`ml-1 ${active ? "text-white/80" : "text-feed-muted"}`}>{count}</span>
+                        <span className={`ml-1 ${active ? "text-feed-text/70" : "text-feed-muted"}`}>{count}</span>
                       </button>
                     );
                   })}
@@ -385,7 +385,7 @@ const ProfileHome = () => {
                     <div className="flex items-center justify-between px-4 py-2 text-xs text-feed-muted">
                       <div className="flex items-center gap-1">
                         <span className="inline-flex w-4 h-4 rounded-full bg-feed-accent items-center justify-center">
-                          <Heart className="w-2.5 h-2.5 text-white fill-white" />
+                          <Heart className="w-2.5 h-2.5 text-feed-text fill-current" />
                         </span>
                         <span>{formatNumber(webie.likes.length)}</span>
                       </div>
