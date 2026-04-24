@@ -26,24 +26,20 @@
     --ring: 217 91% 50%;
     --radius: 0.75rem;
     
-    /* Enhanced gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(280 83% 60%), hsl(262 83% 68%));
-    --gradient-hero: linear-gradient(180deg, hsl(262 83% 98%), hsl(280 70% 97%), hsl(0 0% 100%));
-    --gradient-mesh: radial-gradient(at 40% 20%, hsl(280 80% 90%) 0px, transparent 50%),
-                     radial-gradient(at 80% 0%, hsl(262 80% 85%) 0px, transparent 50%),
-                     radial-gradient(at 0% 50%, hsl(290 70% 90%) 0px, transparent 50%),
-                     radial-gradient(at 80% 50%, hsl(270 80% 95%) 0px, transparent 50%),
-                     radial-gradient(at 0% 100%, hsl(260 70% 90%) 0px, transparent 50%);
-    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(262 30% 98%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(280 83% 60%), hsl(320 83% 60%));
-    --gradient-success: linear-gradient(135deg, hsl(142 76% 46%), hsl(160 76% 50%));
-    --gradient-warning: linear-gradient(135deg, hsl(38 92% 50%), hsl(45 92% 55%));
+    /* Solid blue surfaces — no gradients */
+    --gradient-primary: hsl(217 91% 50%);
+    --gradient-hero: hsl(210 20% 98%);
+    --gradient-mesh: hsl(210 20% 98%);
+    --gradient-card: hsl(0 0% 100%);
+    --gradient-accent: hsl(217 91% 50%);
+    --gradient-success: hsl(142 76% 36%);
+    --gradient-warning: hsl(38 92% 50%);
     
-    /* Enhanced shadows */
-    --shadow-elegant: 0 10px 40px -10px hsl(262 83% 58% / 0.25);
-    --shadow-glow: 0 0 60px hsl(262 83% 68% / 0.35);
-    --shadow-card: 0 4px 6px -1px hsl(262 30% 50% / 0.1), 0 2px 4px -2px hsl(262 30% 50% / 0.1);
-    --shadow-card-hover: 0 20px 25px -5px hsl(262 30% 50% / 0.15), 0 8px 10px -6px hsl(262 30% 50% / 0.1);
+    /* Blue-tinted shadows */
+    --shadow-elegant: 0 10px 40px -10px hsl(217 91% 50% / 0.25);
+    --shadow-glow: 0 0 60px hsl(217 91% 65% / 0.35);
+    --shadow-card: 0 4px 6px -1px hsl(217 30% 40% / 0.08), 0 2px 4px -2px hsl(217 30% 40% / 0.08);
+    --shadow-card-hover: 0 20px 25px -5px hsl(217 30% 40% / 0.15), 0 8px 10px -6px hsl(217 30% 40% / 0.1);
     --shadow-inner-glow: inset 0 1px 0 0 hsl(0 0% 100% / 0.1);
     
     /* Transitions */
@@ -58,14 +54,14 @@
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
     
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5% 26%;
-    --sidebar-primary: 262 83% 58%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 5% 96%;
-    --sidebar-accent-foreground: 240 6% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 262 83% 58%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 30% 22%;
+    --sidebar-primary: 217 91% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217 91% 96%;
+    --sidebar-accent-foreground: 217 91% 30%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 217 91% 50%;
 
     /* LinkedIn-like neutral feed tokens */
     --feed-bg: 210 14% 95%;
@@ -100,24 +96,20 @@
     --input: 217 33% 17%;
     --ring: 217 91% 60%;
     
-    /* Enhanced dark gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(280 83% 55%), hsl(262 83% 68%));
-    --gradient-hero: linear-gradient(180deg, hsl(222 47% 6%), hsl(260 40% 10%), hsl(222 47% 8%));
-    --gradient-mesh: radial-gradient(at 40% 20%, hsl(280 60% 15%) 0px, transparent 50%),
-                     radial-gradient(at 80% 0%, hsl(262 60% 12%) 0px, transparent 50%),
-                     radial-gradient(at 0% 50%, hsl(290 50% 12%) 0px, transparent 50%),
-                     radial-gradient(at 80% 50%, hsl(270 50% 10%) 0px, transparent 50%),
-                     radial-gradient(at 0% 100%, hsl(260 50% 10%) 0px, transparent 50%);
-    --gradient-card: linear-gradient(135deg, hsl(222 47% 9%) 0%, hsl(262 30% 12%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(280 83% 55%), hsl(320 83% 55%));
-    --gradient-success: linear-gradient(135deg, hsl(142 76% 40%), hsl(160 76% 45%));
-    --gradient-warning: linear-gradient(135deg, hsl(38 92% 45%), hsl(45 92% 50%));
+    /* Solid blue dark surfaces — no gradients */
+    --gradient-primary: hsl(217 91% 60%);
+    --gradient-hero: hsl(222 47% 6%);
+    --gradient-mesh: hsl(222 47% 6%);
+    --gradient-card: hsl(222 47% 9%);
+    --gradient-accent: hsl(217 91% 60%);
+    --gradient-success: hsl(142 76% 40%);
+    --gradient-warning: hsl(38 92% 45%);
     
-    /* Enhanced dark shadows */
-    --shadow-elegant: 0 10px 40px -10px hsl(262 83% 58% / 0.4);
-    --shadow-glow: 0 0 60px hsl(262 83% 68% / 0.5);
+    /* Blue-tinted dark shadows */
+    --shadow-elegant: 0 10px 40px -10px hsl(217 91% 60% / 0.4);
+    --shadow-glow: 0 0 60px hsl(217 91% 70% / 0.5);
     --shadow-card: 0 4px 6px -1px hsl(0 0% 0% / 0.3), 0 2px 4px -2px hsl(0 0% 0% / 0.2);
-    --shadow-card-hover: 0 20px 25px -5px hsl(262 50% 50% / 0.3), 0 8px 10px -6px hsl(262 50% 50% / 0.2);
+    --shadow-card-hover: 0 20px 25px -5px hsl(217 50% 30% / 0.4), 0 8px 10px -6px hsl(217 50% 30% / 0.3);
     
     /* Additional accent colors - dark */
     --success: 142 76% 46%;
@@ -127,14 +119,14 @@
     --info: 199 89% 55%;
     --info-foreground: 0 0% 100%;
     
-    --sidebar-background: 240 6% 8%;
-    --sidebar-foreground: 240 5% 96%;
-    --sidebar-primary: 262 83% 65%;
+    --sidebar-background: 222 47% 8%;
+    --sidebar-foreground: 210 20% 92%;
+    --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 4% 14%;
-    --sidebar-accent-foreground: 240 5% 96%;
-    --sidebar-border: 240 4% 14%;
-    --sidebar-ring: 262 83% 65%;
+    --sidebar-accent: 217 33% 14%;
+    --sidebar-accent-foreground: 210 20% 96%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-ring: 217 91% 60%;
 
     /* LinkedIn-like dark feed tokens */
     --feed-bg: 0 0% 7%;
@@ -249,12 +241,9 @@
     animation: shimmer 2s infinite;
   }
   
-  /* Gradient text */
+  /* Solid primary-colored text (replaces former gradient text) */
   .text-gradient {
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: hsl(var(--primary));
   }
   
   /* Glass morphism */
