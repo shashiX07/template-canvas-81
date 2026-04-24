@@ -188,7 +188,7 @@ const Webies = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] lg:grid-cols-[260px_1fr_320px] gap-6 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] lg:grid-cols-[260px_minmax(0,600px)_320px] gap-6 items-start lg:justify-center">
           {/* ============ LEFT — Discover & Filter ============ */}
           <aside className="hidden md:block sticky top-20 self-start max-h-[calc(100vh-6rem)]">
             <ScrollArea className="h-[calc(100vh-6rem)] pr-2">
