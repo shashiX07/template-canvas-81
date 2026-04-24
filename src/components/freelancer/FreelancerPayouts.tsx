@@ -124,7 +124,7 @@ export default function FreelancerPayouts({ freelancerId, profile }: FreelancerP
       </div>
 
       {/* Balance Card */}
-      <Card className="p-6 bg-gradient-to-br from-primary/10 to-primary/5">
+      <Card className="p-6 bg-primary/5 border-primary/20">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-muted-foreground mb-2">Available Balance</p>

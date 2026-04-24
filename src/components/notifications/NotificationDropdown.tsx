@@ -136,7 +136,7 @@ export function NotificationDropdown() {
                 className="absolute -top-0.5 -right-0.5"
               >
                 <Badge 
-                  className="h-5 min-w-5 flex items-center justify-center p-0 text-[10px] bg-gradient-to-r from-pink-500 to-red-500 border-0"
+                  className="h-5 min-w-5 flex items-center justify-center p-0 text-[10px] bg-primary text-primary-foreground border-0"
                 >
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </Badge>
