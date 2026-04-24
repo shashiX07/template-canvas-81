@@ -173,7 +173,7 @@ const ProfileHome = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,600px)_320px] gap-6 items-start lg:justify-center">
           {/* ============ CENTER FEED ============ */}
           <main className="space-y-3 min-w-0">
             {/* Composer + filters */}
