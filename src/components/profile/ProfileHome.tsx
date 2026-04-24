@@ -1,13 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Search,
   Heart,
@@ -17,30 +15,23 @@ import {
   Clock,
   Sparkles,
   Plus,
-  Grid3X3,
-  LayoutGrid,
   Flame,
-  Bookmark,
   X,
-  Compass,
+  MoreHorizontal,
+  Send,
+  Hash,
+  UserPlus,
+  Rocket,
   TrendingUp,
+  Filter,
 } from "lucide-react";
 import { webieStorage, type Webie } from "@/lib/webieStorage";
 import { userStorage } from "@/lib/storage";
 import { notificationStorage } from "@/lib/notificationStorage";
+import { followStorage } from "@/lib/followStorage";
 import { toast } from "sonner";
 
 type SortKey = "trending" | "recent" | "all";
-
-const container = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.04 } },
-};
-
-const item = {
-  hidden: { opacity: 0, y: 12 },
-  show: { opacity: 1, y: 0 },
-};
 
 const ProfileHome = () => {
   const navigate = useNavigate();
@@ -48,9 +39,7 @@ const ProfileHome = () => {
   const [allPublic, setAllPublic] = useState<Webie[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("trending");
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [gridView, setGridView] = useState<"grid" | "compact">("grid");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const currentUser = userStorage.getCurrentUser();
 
   useEffect(() => {
@@ -58,28 +47,24 @@ const ProfileHome = () => {
   }, []);
 
   useEffect(() => {
-    setIsLoading(true);
-    const t = setTimeout(() => {
-      let result: Webie[];
-      if (searchQuery) result = webieStorage.search(searchQuery);
-      else if (sort === "trending") result = webieStorage.getTrending();
-      else if (sort === "recent") result = webieStorage.getRecent();
-      else result = webieStorage.getPublic();
-      if (selectedTag) result = result.filter((w) => w.tags.includes(selectedTag));
-      setWebies(result);
-      setIsLoading(false);
-    }, 200);
-    return () => clearTimeout(t);
-  }, [sort, searchQuery, selectedTag]);
+    let result: Webie[];
+    if (searchQuery.trim()) result = webieStorage.search(searchQuery);
+    else if (sort === "trending") result = webieStorage.getTrending();
+    else if (sort === "recent") result = webieStorage.getRecent();
+    else result = webieStorage.getPublic();
+    if (selectedTags.length > 0) {
+      result = result.filter((w) => selectedTags.every((t) => w.tags.includes(t)));
+    }
+    setWebies(result);
+  }, [sort, searchQuery, selectedTags]);
 
-  const refreshOne = (id: string, patch: Partial<Webie>) => {
-    setWebies((prev) => prev.map((w) => (w.id === id ? { ...w, ...patch } : w)));
-  };
+  const patch = (id: string, p: Partial<Webie>) =>
+    setWebies((prev) => prev.map((w) => (w.id === id ? { ...w, ...p } : w)));
 
   const handleLike = (webieId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!currentUser) {
-      toast.error("Please login to like");
+      toast.error("Sign in to like webies");
       navigate("/auth");
       return;
     }
@@ -95,7 +80,7 @@ const ProfileHome = () => {
         webie.title
       );
     }
-    refreshOne(webieId, {
+    patch(webieId, {
       likes: wasLiked
         ? webie.likes.filter((id) => id !== currentUser.id)
         : [...webie.likes, currentUser.id],
@@ -113,7 +98,7 @@ const ProfileHome = () => {
         toast.success("Link copied to clipboard");
       }
       webieStorage.incrementShares(webie.id);
-      refreshOne(webie.id, { shares: webie.shares + 1 });
+      patch(webie.id, { shares: webie.shares + 1 });
     } catch {
       /* cancelled */
     }
@@ -128,415 +113,441 @@ const ProfileHome = () => {
   const timeAgo = (date: string): string => {
     const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
     if (seconds < 60) return "just now";
-    if (seconds < 3600) return Math.floor(seconds / 60) + "m ago";
-    if (seconds < 86400) return Math.floor(seconds / 3600) + "h ago";
-    if (seconds < 604800) return Math.floor(seconds / 86400) + "d ago";
+    if (seconds < 3600) return Math.floor(seconds / 60) + "m";
+    if (seconds < 86400) return Math.floor(seconds / 3600) + "h";
+    if (seconds < 604800) return Math.floor(seconds / 86400) + "d";
     return new Date(date).toLocaleDateString();
   };
 
-  const isLiked = (webie: Webie) => currentUser && webie.likes.includes(currentUser.id);
-
-  const popularTags = useMemo(() => {
+  const allTags = useMemo(() => {
     const map = new Map<string, number>();
     allPublic.forEach((w) => w.tags.forEach((t) => map.set(t, (map.get(t) || 0) + 1)));
-    return Array.from(map.entries()).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
   }, [allPublic]);
 
-  const stats = useMemo(
-    () => ({
-      total: allPublic.length,
-      creators: new Set(allPublic.map((w) => w.userId)).size,
-      likes: allPublic.reduce((s, w) => s + w.likes.length, 0),
-    }),
-    [allPublic]
-  );
+  const topCreators = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; avatar?: string; count: number; likes: number }>();
+    allPublic.forEach((w) => {
+      const e = map.get(w.userId) || { id: w.userId, name: w.userName, avatar: w.userAvatar, count: 0, likes: 0 };
+      e.count += 1;
+      e.likes += w.likes.length;
+      map.set(w.userId, e);
+    });
+    return Array.from(map.values())
+      .filter((c) => c.id !== currentUser?.id)
+      .sort((a, b) => b.likes - a.likes)
+      .slice(0, 4);
+  }, [allPublic, currentUser?.id]);
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
+  };
+
+  const handleFollow = (userId: string, name: string) => {
+    if (!currentUser) {
+      navigate("/auth");
+      return;
+    }
+    if (followStorage.isFollowing(currentUser.id, userId)) {
+      followStorage.unfollow(currentUser.id, userId);
+      toast.success(`Unfollowed ${name}`);
+    } else {
+      followStorage.follow(currentUser.id, userId);
+      toast.success(`Now following ${name}`);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* HEADER — clean, no gradients */}
-      <section className="border-b bg-card">
-        <div className="container mx-auto px-6 py-8">
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-            <div>
-              <div className="inline-flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Compass className="w-4 h-4 text-primary" />
-                </div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Webie Feed
-                </span>
-              </div>
-              <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-                Explore Webies
-              </h1>
-              <p className="text-sm text-muted-foreground mt-2 max-w-lg">
-                Discover templates crafted by our community. Get inspired and create your own.
-              </p>
-            </div>
-
-            {/* Stats strip */}
-            <div className="flex items-center gap-6">
-              <div>
-                <p className="text-2xl font-bold text-foreground">{formatNumber(stats.total)}</p>
-                <p className="text-xs text-muted-foreground">Webies</p>
-              </div>
-              <Separator orientation="vertical" className="h-10" />
-              <div>
-                <p className="text-2xl font-bold text-foreground">{formatNumber(stats.creators)}</p>
-                <p className="text-xs text-muted-foreground">Creators</p>
-              </div>
-              <Separator orientation="vertical" className="h-10" />
-              <div>
-                <p className="text-2xl font-bold text-foreground">{formatNumber(stats.likes)}</p>
-                <p className="text-xs text-muted-foreground">Likes</p>
-              </div>
-            </div>
+    <div className="min-h-screen bg-feed">
+      <div className="max-w-[1200px] mx-auto px-4 py-6">
+        {/* Mobile search */}
+        <div className="lg:hidden mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-feed-muted" />
+            <Input
+              placeholder="Search webies, tags, creators..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-10 bg-feed-surface border-feed-border text-feed-text"
+            />
           </div>
+        </div>
 
-          {/* Search */}
-          <div className="mt-6 flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search webies, tags, or creators..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-11 bg-background border-border"
-              />
-              {searchQuery && (
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
+          {/* ============ CENTER FEED ============ */}
+          <main className="space-y-3 min-w-0">
+            {/* Composer + filters */}
+            <div className="bg-feed-surface border border-feed-border rounded-lg p-3">
+              <div className="flex items-center gap-3">
+                <Avatar className="w-11 h-11 shrink-0">
+                  <AvatarImage src={currentUser?.avatar} />
+                  <AvatarFallback className="bg-feed-hover text-feed-text">
+                    {currentUser?.name?.charAt(0).toUpperCase() || "?"}
+                  </AvatarFallback>
+                </Avatar>
                 <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted"
+                  onClick={() => (currentUser ? navigate("/webie/create") : navigate("/auth"))}
+                  className="flex-1 h-11 px-4 text-left rounded-full border border-feed-border text-feed-muted text-sm font-medium hover:bg-feed-hover transition-colors"
                 >
-                  <X className="w-4 h-4 text-muted-foreground" />
+                  {currentUser ? `Share something new, ${currentUser.name?.split(" ")[0]}...` : "Sign in to share a webie"}
                 </button>
+                <Button
+                  onClick={() => (currentUser ? navigate("/webie/create") : navigate("/auth"))}
+                  className="bg-feed-accent hover:bg-feed-accent-hover text-white rounded-full h-10 px-4 hidden sm:inline-flex"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Create
+                </Button>
+              </div>
+
+              {/* Inline desktop search + sort */}
+              <div className="hidden md:flex items-center gap-2 mt-3 pt-3 border-t border-feed-border">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-feed-muted" />
+                  <Input
+                    placeholder="Search webies..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 h-9 bg-feed-bg border-feed-border text-feed-text text-sm"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-feed-hover"
+                    >
+                      <X className="w-3.5 h-3.5 text-feed-muted" />
+                    </button>
+                  )}
+                </div>
+                <div className="inline-flex items-center bg-feed-bg border border-feed-border rounded-md p-0.5">
+                  {[
+                    { key: "trending" as SortKey, label: "Trending", icon: Flame },
+                    { key: "recent" as SortKey, label: "Recent", icon: Clock },
+                    { key: "all" as SortKey, label: "All", icon: Sparkles },
+                  ].map(({ key, label, icon: Icon }) => (
+                    <button
+                      key={key}
+                      onClick={() => setSort(key)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded transition-colors ${
+                        sort === key
+                          ? "bg-feed-surface text-feed-accent shadow-sm"
+                          : "text-feed-muted hover:text-feed-text"
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      <span className="hidden lg:inline">{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tag chips row */}
+              {allTags.length > 0 && (
+                <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-feed-border overflow-x-auto pb-0.5">
+                  <Filter className="w-3.5 h-3.5 text-feed-muted shrink-0" />
+                  {allTags.slice(0, 12).map(([tag, count]) => {
+                    const active = selectedTags.includes(tag);
+                    return (
+                      <button
+                        key={tag}
+                        onClick={() => toggleTag(tag)}
+                        className={`text-xs font-medium px-2.5 py-1 rounded-full border transition-colors shrink-0 ${
+                          active
+                            ? "bg-feed-accent text-white border-feed-accent"
+                            : "bg-feed-bg text-feed-text border-feed-border hover:border-feed-accent hover:text-feed-accent"
+                        }`}
+                      >
+                        #{tag}
+                        <span className={`ml-1 ${active ? "text-white/80" : "text-feed-muted"}`}>{count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               )}
             </div>
-            {currentUser && (
-              <Button
-                onClick={() => navigate("/webie/create")}
-                className="h-11 px-5 gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Create Webie
-              </Button>
-            )}
-          </div>
 
-          {/* Popular tag pills */}
-          {popularTags.length > 0 && (
-            <div className="mt-5 flex items-center gap-2 overflow-x-auto pb-1">
-              <span className="text-xs font-medium text-muted-foreground shrink-0">Popular:</span>
-              <button
-                onClick={() => setSelectedTag(null)}
-                className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors shrink-0 ${
-                  !selectedTag
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-background text-foreground border-border hover:border-primary/40"
-                }`}
-              >
-                All
-              </button>
-              {popularTags.map(([tag, count]) => {
-                const active = selectedTag === tag;
-                return (
-                  <button
-                    key={tag}
-                    onClick={() => setSelectedTag(active ? null : tag)}
-                    className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors shrink-0 ${
-                      active
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-background text-foreground border-border hover:border-primary/40"
-                    }`}
-                  >
+            {/* Active filter strip */}
+            {(selectedTags.length > 0 || searchQuery) && (
+              <div className="flex flex-wrap items-center gap-2 px-1">
+                <span className="text-xs text-feed-muted">Filters:</span>
+                {searchQuery && (
+                  <Badge variant="secondary" className="bg-feed-accent/10 text-feed-accent border-0 gap-1">
+                    "{searchQuery}"
+                    <button onClick={() => setSearchQuery("")}>
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                )}
+                {selectedTags.map((tag) => (
+                  <Badge key={tag} variant="secondary" className="bg-feed-accent/10 text-feed-accent border-0 gap-1">
                     #{tag}
-                    <span className={`ml-1.5 ${active ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </section>
+                    <button onClick={() => toggleTag(tag)}>
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                ))}
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedTags([]);
+                  }}
+                  className="text-xs text-feed-muted hover:text-feed-accent font-medium ml-auto"
+                >
+                  Clear all
+                </button>
+              </div>
+            )}
 
-      {/* TOOLBAR */}
-      <section className="border-b bg-background sticky top-0 z-10">
-        <div className="container mx-auto px-6 py-3 flex items-center justify-between gap-3">
-          {/* Sort tabs */}
-          <div className="inline-flex items-center bg-muted/50 rounded-lg p-1">
-            {[
-              { key: "trending" as SortKey, label: "Trending", icon: Flame },
-              { key: "recent" as SortKey, label: "Recent", icon: Clock },
-              { key: "all" as SortKey, label: "All", icon: Sparkles },
-            ].map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => setSort(key)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                  sort === key
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                {label}
-              </button>
-            ))}
-          </div>
+            {/* Posts */}
+            {webies.length === 0 ? (
+              <div className="bg-feed-surface border border-feed-border rounded-lg py-16 text-center">
+                <Sparkles className="w-12 h-12 mx-auto text-feed-muted mb-3" />
+                <h3 className="text-base font-semibold text-feed-text mb-1">No webies found</h3>
+                <p className="text-sm text-feed-muted mb-5">Try a different search or filter</p>
+                {currentUser && (
+                  <Button
+                    onClick={() => navigate("/webie/create")}
+                    className="bg-feed-accent hover:bg-feed-accent-hover text-white rounded-full"
+                  >
+                    Create your first webie
+                  </Button>
+                )}
+              </div>
+            ) : (
+              webies.map((webie) => {
+                const liked = webie.likes.includes(currentUser?.id || "");
+                return (
+                  <article
+                    key={webie.id}
+                    className="bg-feed-surface border border-feed-border rounded-lg overflow-hidden"
+                  >
+                    {/* Author */}
+                    <div className="flex items-start justify-between p-3">
+                      <button
+                        onClick={() => navigate(`/profile/user/${webie.userId}`)}
+                        className="flex items-start gap-2 group"
+                      >
+                        <Avatar className="w-11 h-11">
+                          <AvatarImage src={webie.userAvatar} />
+                          <AvatarFallback className="bg-feed-hover text-feed-text">
+                            {webie.userName.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="text-left">
+                          <p className="font-semibold text-sm text-feed-text group-hover:text-feed-accent group-hover:underline">
+                            {webie.userName}
+                          </p>
+                          <p className="text-xs text-feed-muted">Webie creator</p>
+                          <p className="text-xs text-feed-muted">{timeAgo(webie.createdAt)} · 🌐</p>
+                        </div>
+                      </button>
+                      <button className="p-1.5 rounded-full hover:bg-feed-hover transition-colors">
+                        <MoreHorizontal className="w-5 h-5 text-feed-muted" />
+                      </button>
+                    </div>
 
-          {/* Right side */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground hidden sm:inline">
-              {webies.length} {webies.length === 1 ? "result" : "results"}
-            </span>
-            <div className="flex items-center bg-muted/50 rounded-lg p-1">
-              <Button
-                variant={gridView === "grid" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setGridView("grid")}
-                className="h-7 w-7 p-0"
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={gridView === "compact" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setGridView("compact")}
-                className="h-7 w-7 p-0"
-              >
-                <Grid3X3 className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+                    <div className="px-4 pb-3">
+                      <h3
+                        onClick={() => navigate(`/webie/${webie.id}`)}
+                        className="font-semibold text-feed-text text-[15px] mb-1 cursor-pointer hover:text-feed-accent"
+                      >
+                        {webie.title}
+                      </h3>
+                      <p className="text-sm text-feed-text leading-relaxed whitespace-pre-wrap">
+                        {webie.description}
+                      </p>
+                      {webie.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-x-1 gap-y-0.5 mt-2">
+                          {webie.tags.map((tag) => (
+                            <button
+                              key={tag}
+                              onClick={() => toggleTag(tag)}
+                              className="text-sm text-feed-accent hover:underline font-medium"
+                            >
+                              #{tag}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
-      {/* CONTENT */}
-      <section className="py-6">
-        <div className="container mx-auto px-6">
-          {isLoading ? (
-            <div
-              className={`grid gap-5 ${
-                gridView === "compact"
-                  ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-                  : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-              }`}
-            >
-              {[...Array(6)].map((_, i) => (
-                <Card key={i} className="overflow-hidden">
-                  <Skeleton className="aspect-video w-full" />
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="h-8 w-8 rounded-full" />
-                      <div className="space-y-1.5">
-                        <Skeleton className="h-3.5 w-24" />
-                        <Skeleton className="h-3 w-16" />
+                    <button
+                      onClick={() => navigate(`/webie/${webie.id}`)}
+                      className="block w-full bg-feed-bg border-y border-feed-border"
+                    >
+                      <img
+                        src={webie.thumbnail}
+                        alt={webie.title}
+                        className="w-full max-h-[520px] object-cover"
+                      />
+                    </button>
+
+                    <div className="flex items-center justify-between px-4 py-2 text-xs text-feed-muted">
+                      <div className="flex items-center gap-1">
+                        <span className="inline-flex w-4 h-4 rounded-full bg-feed-accent items-center justify-center">
+                          <Heart className="w-2.5 h-2.5 text-white fill-white" />
+                        </span>
+                        <span>{formatNumber(webie.likes.length)}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span>{formatNumber(webie.comments.length)} comments</span>
+                        <span>·</span>
+                        <span>{formatNumber(webie.shares)} shares</span>
+                        <span>·</span>
+                        <span className="flex items-center gap-1">
+                          <Eye className="w-3 h-3" />
+                          {formatNumber(webie.views)}
+                        </span>
                       </div>
                     </div>
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-full" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <AnimatePresence mode="wait">
-              {webies.length === 0 ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-center py-20"
-                >
-                  <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-5">
-                    <Sparkles className="w-7 h-7 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-1">No webies found</h3>
-                  <p className="text-sm text-muted-foreground mb-5 max-w-sm mx-auto">
-                    {searchQuery || selectedTag
-                      ? "Try adjusting your filters or search terms"
-                      : "Be the first to share your creation with the community"}
-                  </p>
-                  {(searchQuery || selectedTag) && (
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setSearchQuery("");
-                        setSelectedTag(null);
-                      }}
-                      className="mr-2"
-                    >
-                      Clear filters
-                    </Button>
-                  )}
-                  {currentUser && (
-                    <Button onClick={() => navigate("/webie/create")} className="gap-2">
-                      <Plus className="w-4 h-4" />
-                      Create webie
-                    </Button>
-                  )}
-                </motion.div>
-              ) : (
-                <motion.div
-                  variants={container}
-                  initial="hidden"
-                  animate="show"
-                  className={`grid gap-5 ${
-                    gridView === "compact"
-                      ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-                      : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-                  }`}
-                >
-                  {webies.map((webie, index) => (
-                    <motion.div key={webie.id} variants={item}>
-                      <Card
-                        className="group cursor-pointer overflow-hidden border bg-card hover:border-primary/30 hover:shadow-md transition-all duration-200"
-                        onClick={() => navigate(`/webie/${webie.id}`)}
+
+                    <Separator className="bg-feed-border" />
+
+                    <div className="grid grid-cols-4">
+                      <button
+                        onClick={(e) => handleLike(webie.id, e)}
+                        className={`flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-colors hover:bg-feed-hover ${
+                          liked ? "text-feed-accent" : "text-feed-muted"
+                        }`}
                       >
-                        {/* Thumbnail */}
-                        <div className="relative aspect-video overflow-hidden bg-muted">
-                          <img
-                            src={webie.thumbnail}
-                            alt={webie.title}
-                            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                        <Heart className={`w-5 h-5 ${liked ? "fill-current" : ""}`} />
+                        <span className="hidden sm:inline">Like</span>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/webie/${webie.id}#comments`);
+                        }}
+                        className="flex items-center justify-center gap-2 py-3 text-sm font-semibold text-feed-muted transition-colors hover:bg-feed-hover"
+                      >
+                        <MessageCircle className="w-5 h-5" />
+                        <span className="hidden sm:inline">Comment</span>
+                      </button>
+                      <button
+                        onClick={(e) => handleShare(webie, e)}
+                        className="flex items-center justify-center gap-2 py-3 text-sm font-semibold text-feed-muted transition-colors hover:bg-feed-hover"
+                      >
+                        <Share2 className="w-5 h-5" />
+                        <span className="hidden sm:inline">Repost</span>
+                      </button>
+                      <button
+                        onClick={(e) => handleShare(webie, e)}
+                        className="flex items-center justify-center gap-2 py-3 text-sm font-semibold text-feed-muted transition-colors hover:bg-feed-hover"
+                      >
+                        <Send className="w-5 h-5" />
+                        <span className="hidden sm:inline">Send</span>
+                      </button>
+                    </div>
+                  </article>
+                );
+              })
+            )}
+          </main>
 
-                          {index < 3 && sort === "trending" && !searchQuery && !selectedTag && (
-                            <div className="absolute top-2.5 left-2.5">
-                              <Badge className="bg-primary text-primary-foreground border-0 shadow-sm gap-1 font-semibold">
-                                <TrendingUp className="w-3 h-3" />
-                                Trending
-                              </Badge>
-                            </div>
-                          )}
-
-                          {/* Quick actions */}
-                          <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0">
-                            <div className="flex items-center gap-1.5">
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                className={`h-8 gap-1 rounded-full text-xs ${
-                                  isLiked(webie)
-                                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                                    : "bg-background/95 hover:bg-background text-foreground"
-                                }`}
-                                onClick={(e) => handleLike(webie.id, e)}
-                              >
-                                <Heart className={`w-3.5 h-3.5 ${isLiked(webie) ? "fill-current" : ""}`} />
-                                {formatNumber(webie.likes.length)}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                className="h-8 gap-1 rounded-full text-xs bg-background/95 hover:bg-background text-foreground"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/webie/${webie.id}#comments`);
-                                }}
-                              >
-                                <MessageCircle className="w-3.5 h-3.5" />
-                                {formatNumber(webie.comments.length)}
-                              </Button>
-                            </div>
-                            <div className="flex gap-1.5">
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                className="h-8 w-8 p-0 rounded-full bg-background/95 hover:bg-background text-foreground"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toast.success("Saved to bookmarks");
-                                }}
-                              >
-                                <Bookmark className="w-3.5 h-3.5" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                className="h-8 w-8 p-0 rounded-full bg-background/95 hover:bg-background text-foreground"
-                                onClick={(e) => handleShare(webie, e)}
-                              >
-                                <Share2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-
-                        <CardContent className="p-4">
-                          {/* Creator */}
-                          <div className="flex items-center gap-2.5 mb-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={webie.userAvatar} />
-                              <AvatarFallback className="bg-muted text-foreground text-xs">
-                                {webie.userName.charAt(0).toUpperCase()}
+          {/* ============ RIGHT — Suggestions ============ */}
+          <aside className="hidden lg:block sticky top-6 self-start max-h-[calc(100vh-3rem)]">
+            <ScrollArea className="h-[calc(100vh-3rem)] pr-2">
+              <div className="space-y-3">
+                {!currentUser ? (
+                  <>
+                    <div className="bg-feed-surface border border-feed-border rounded-lg p-5 text-center">
+                      <div className="w-12 h-12 mx-auto rounded-full bg-feed-accent/10 flex items-center justify-center mb-3">
+                        <Rocket className="w-6 h-6 text-feed-accent" />
+                      </div>
+                      <h3 className="text-base font-semibold text-feed-text mb-1">
+                        Join the Webie community
+                      </h3>
+                      <p className="text-xs text-feed-muted mb-4 leading-relaxed">
+                        Follow creators, like posts, and share your own webies.
+                      </p>
+                      <Button
+                        onClick={() => navigate("/auth")}
+                        className="w-full bg-feed-accent hover:bg-feed-accent-hover text-white rounded-full font-semibold"
+                      >
+                        Sign up — it's free
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="bg-feed-surface border border-feed-border rounded-lg p-4">
+                    <h3 className="text-sm font-semibold text-feed-text mb-3 flex items-center gap-2">
+                      <UserPlus className="w-4 h-4 text-feed-accent" />
+                      People to follow
+                    </h3>
+                    {topCreators.length === 0 ? (
+                      <p className="text-xs text-feed-muted">No suggestions yet</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {topCreators.map((c) => (
+                          <div key={c.id} className="flex items-center gap-2.5">
+                            <Avatar className="w-10 h-10 shrink-0">
+                              <AvatarImage src={c.avatar} />
+                              <AvatarFallback className="bg-feed-hover text-feed-text text-xs">
+                                {c.name.charAt(0).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate text-foreground">
-                                {webie.userName}
+                            <div className="min-w-0 flex-1">
+                              <button
+                                onClick={() => navigate(`/profile/user/${c.id}`)}
+                                className="text-sm font-semibold text-feed-text hover:text-feed-accent hover:underline truncate block text-left"
+                              >
+                                {c.name}
+                              </button>
+                              <p className="text-[11px] text-feed-muted">
+                                {c.count} webies · {formatNumber(c.likes)} likes
                               </p>
-                              <p className="text-xs text-muted-foreground">{timeAgo(webie.createdAt)}</p>
                             </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleFollow(c.id, c.name)}
+                              className="h-7 px-3 text-xs rounded-full border-feed-accent text-feed-accent hover:bg-feed-accent hover:text-white"
+                            >
+                              <Plus className="w-3 h-3 mr-0.5" />
+                              Follow
+                            </Button>
                           </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
-                          <h3 className="font-semibold text-base mb-1 line-clamp-1 text-foreground group-hover:text-primary transition-colors">
-                            {webie.title}
-                          </h3>
-                          {gridView === "grid" && (
-                            <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                              {webie.description}
-                            </p>
-                          )}
-
-                          {webie.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mb-3">
-                              {webie.tags.slice(0, gridView === "compact" ? 1 : 3).map((tag) => (
-                                <button
-                                  key={tag}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedTag(tag);
-                                  }}
-                                  className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-                                >
-                                  #{tag}
-                                </button>
-                              ))}
-                              {webie.tags.length > (gridView === "compact" ? 1 : 3) && (
-                                <span className="text-xs px-2 py-0.5 rounded-full text-muted-foreground">
-                                  +{webie.tags.length - (gridView === "compact" ? 1 : 3)}
-                                </span>
-                              )}
-                            </div>
-                          )}
-
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground pt-3 border-t">
-                            <span className="flex items-center gap-1.5">
-                              <Heart className="w-3.5 h-3.5" />
-                              {formatNumber(webie.likes.length)}
-                            </span>
-                            <span className="flex items-center gap-1.5">
-                              <MessageCircle className="w-3.5 h-3.5" />
-                              {formatNumber(webie.comments.length)}
-                            </span>
-                            <span className="flex items-center gap-1.5 ml-auto">
-                              <Eye className="w-3.5 h-3.5" />
-                              {formatNumber(webie.views)}
-                            </span>
+                {/* Trending tags */}
+                <div className="bg-feed-surface border border-feed-border rounded-lg p-4">
+                  <h3 className="text-sm font-semibold text-feed-text mb-3 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-feed-accent" />
+                    Trending tags
+                  </h3>
+                  {allTags.length === 0 ? (
+                    <p className="text-xs text-feed-muted">No tags yet</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {allTags.slice(0, 6).map(([tag, count]) => (
+                        <button
+                          key={tag}
+                          onClick={() => toggleTag(tag)}
+                          className="w-full flex items-center justify-between text-left hover:bg-feed-hover rounded-md px-2 py-1.5 transition-colors"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-feed-text truncate">#{tag}</p>
+                            <p className="text-[11px] text-feed-muted">{count} webies</p>
                           </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          )}
+                          <Hash className="w-4 h-4 text-feed-muted shrink-0" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-[11px] text-feed-muted px-2 leading-relaxed">
+                  Webie · About · Help · Privacy · Terms
+                </p>
+              </div>
+            </ScrollArea>
+          </aside>
         </div>
-      </section>
+      </div>
     </div>
   );
 };
