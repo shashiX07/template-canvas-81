@@ -98,7 +98,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 217 33% 17%;
     --input: 217 33% 17%;
-    --ring: 48 100% 55%;
+    --ring: 217 91% 60%;
     
     /* Enhanced dark gradients */
     --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(280 83% 55%), hsl(262 83% 68%));
