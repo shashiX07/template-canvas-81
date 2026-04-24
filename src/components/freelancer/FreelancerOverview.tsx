@@ -116,10 +116,10 @@ export default function FreelancerOverview({ profile }: FreelancerOverviewProps)
                   </div>
                   <div className="text-right">
                     <div className={`px-2 py-1 rounded text-xs ${
-                      template.submissionStatus === 'published' ? 'bg-green-500/10 text-green-500' :
-                      template.submissionStatus === 'approved' ? 'bg-blue-500/10 text-blue-500' :
-                      template.submissionStatus === 'under_review' ? 'bg-orange-500/10 text-orange-500' :
-                      'bg-gray-500/10 text-gray-500'
+                      template.submissionStatus === 'published' ? 'bg-success/10 text-success' :
+                      template.submissionStatus === 'approved' ? 'bg-primary/10 text-primary' :
+                      template.submissionStatus === 'under_review' ? 'bg-warning/10 text-warning' :
+                      'bg-muted text-muted-foreground'
                     }`}>
                       {template.submissionStatus}
                     </div>
