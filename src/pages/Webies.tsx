@@ -161,8 +161,13 @@ const Webies = () => {
       navigate("/auth");
       return;
     }
-    followStorage.toggleFollow(currentUser.id, userId);
-    toast.success(`Now following ${name}`);
+    if (followStorage.isFollowing(currentUser.id, userId)) {
+      followStorage.unfollow(currentUser.id, userId);
+      toast.success(`Unfollowed ${name}`);
+    } else {
+      followStorage.follow(currentUser.id, userId);
+      toast.success(`Now following ${name}`);
+    }
   };
 
   return (
