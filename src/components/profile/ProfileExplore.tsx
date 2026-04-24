@@ -259,7 +259,7 @@ const ProfileExplore = () => {
                           Premium
                         </Badge>
                       )}
-                      <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/70 to-transparent">
+                      <div className="absolute inset-x-0 bottom-0 p-3 bg-black/60">
                         <h3 className="font-semibold text-white text-sm line-clamp-1">
                           {template.title}
                         </h3>
@@ -399,7 +399,7 @@ const ProfileExplore = () => {
                     className="overflow-hidden border border-feed-border bg-feed-surface hover:border-feed-accent transition-all"
                   >
                     {/* Banner */}
-                    <div className="h-16 bg-gradient-to-r from-feed-accent/40 via-feed-accent/20 to-feed-hover" />
+                    <div className="h-16 bg-primary/20" />
                     <CardContent className="p-4 -mt-8">
                       <Avatar
                         className="h-16 w-16 border-4 border-feed-surface cursor-pointer mb-2"

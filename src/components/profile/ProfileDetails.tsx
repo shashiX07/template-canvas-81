@@ -84,7 +84,7 @@ export function ProfileDetails() {
           <div className="shrink-0">
             <Avatar className="w-32 h-32 md:w-40 md:h-40 border-4 border-background ring-2 ring-muted">
               <AvatarImage src={user.avatar} />
-              <AvatarFallback className="text-4xl bg-gradient-to-br from-primary/20 to-primary/40">
+              <AvatarFallback className="text-4xl bg-primary/15 text-primary">
                 {user.name.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>

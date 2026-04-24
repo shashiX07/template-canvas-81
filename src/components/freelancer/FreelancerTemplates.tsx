@@ -80,50 +80,71 @@ export default function FreelancerTemplates({ freelancerId }: FreelancerTemplate
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTemplates.map((template) => (
-            <Card key={template.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-              <img 
-                src={template.thumbnail} 
-                alt={template.title}
-                className="w-full h-48 object-cover"
-              />
-              <div className="p-4 space-y-3">
-                <div className="flex items-start justify-between">
-                  <h3 className="font-semibold text-lg line-clamp-1">{template.title}</h3>
-                  <Badge className={getStatusColor(template.submissionStatus)}>
-                    {template.submissionStatus}
-                  </Badge>
-                </div>
+            <Card
+              key={template.id}
+              className="group overflow-hidden border border-border bg-card hover:border-primary/40 hover:shadow-card-hover transition-all duration-300 flex flex-col"
+            >
+              {/* Thumbnail */}
+              <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+                <img
+                  src={template.thumbnail}
+                  alt={template.title}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                  loading="lazy"
+                />
+                <Badge
+                  className={`absolute top-3 right-3 capitalize border-0 ${getStatusColor(template.submissionStatus)}`}
+                >
+                  {template.submissionStatus.replace('_', ' ')}
+                </Badge>
+              </div>
 
-                <p className="text-sm text-muted-foreground line-clamp-2">
+              {/* Body */}
+              <div className="p-4 flex-1 flex flex-col">
+                <h3 className="font-semibold text-base leading-snug line-clamp-1 group-hover:text-primary transition-colors">
+                  {template.title}
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">
                   {template.description}
                 </p>
 
-                <div className="grid grid-cols-3 gap-2 text-sm">
-                  <div className="flex items-center gap-1">
-                    <Download className="w-4 h-4 text-muted-foreground" />
-                    <span>{template.downloads}</span>
+                {/* Stats row */}
+                <div className="mt-4 grid grid-cols-3 gap-2 py-3 border-y border-border">
+                  <div className="flex flex-col items-center text-center">
+                    <span className="inline-flex items-center gap-1 text-sm font-semibold text-foreground">
+                      <Download className="w-3.5 h-3.5 text-muted-foreground" />
+                      {template.downloads}
+                    </span>
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground mt-0.5">Downloads</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <DollarSign className="w-4 h-4 text-muted-foreground" />
-                    <span>{formatCurrency(template.earnings)}</span>
+                  <div className="flex flex-col items-center text-center border-x border-border">
+                    <span className="inline-flex items-center gap-1 text-sm font-semibold text-foreground">
+                      <DollarSign className="w-3.5 h-3.5 text-muted-foreground" />
+                      {formatCurrency(template.earnings)}
+                    </span>
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground mt-0.5">Earned</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                    <span>{template.rating.toFixed(1)}</span>
+                  <div className="flex flex-col items-center text-center">
+                    <span className="inline-flex items-center gap-1 text-sm font-semibold text-foreground">
+                      <Star className="w-3.5 h-3.5 fill-primary text-primary" />
+                      {template.rating.toFixed(1)}
+                    </span>
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground mt-0.5">Rating</span>
                   </div>
                 </div>
 
-                <div className="flex gap-2 pt-2">
+                {/* Actions */}
+                <div className="flex gap-2 mt-4">
                   <Button variant="outline" size="sm" className="flex-1">
-                    <Eye className="w-4 h-4 mr-1" />
+                    <Eye className="w-4 h-4 mr-1.5" />
                     View
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Edit className="w-4 h-4 mr-1" />
+                  <Button size="sm" className="flex-1">
+                    <Edit className="w-4 h-4 mr-1.5" />
                     Edit
                   </Button>
                   {template.submissionStatus === 'draft' && (
-                    <Button variant="outline" size="sm">
+                    <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   )}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, SlidersHorizontal, Eye, Info, Pencil, Star, Download } from "lucide-react";
@@ -138,65 +138,99 @@ const Templates = () => {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {templates.map((template) => (
-              <Card key={template.id} className="group overflow-hidden hover:shadow-elegant transition-all">
-                <CardHeader className="p-0">
-                  <div className="relative aspect-video overflow-hidden bg-muted">
-                    <img
-                      src={template.thumbnail}
-                      alt={template.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    />
-                    {template.isPremium && (
-                      <Badge className="absolute top-2 right-2 bg-primary">
-                        Premium
-                      </Badge>
-                    )}
-                  </div>
-                </CardHeader>
+              <Card
+                key={template.id}
+                className="group relative overflow-hidden border border-border bg-card hover:border-primary/40 hover:shadow-card-hover transition-all duration-300 flex flex-col"
+              >
+                {/* Thumbnail */}
+                <div
+                  className="relative aspect-[4/3] overflow-hidden bg-muted cursor-pointer"
+                  onClick={() => navigate(`/template/${template.id}/preview`)}
+                >
+                  <img
+                    src={template.thumbnail}
+                    alt={template.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                    loading="lazy"
+                  />
 
-                <CardContent className="p-4">
-                  <h3 className="font-bold text-lg mb-2 line-clamp-1">{template.title}</h3>
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                  {/* Category pill */}
+                  <Badge
+                    variant="secondary"
+                    className="absolute top-3 left-3 bg-background/90 text-foreground border border-border backdrop-blur-sm font-medium"
+                  >
+                    {template.category}
+                  </Badge>
+
+                  {/* Premium badge */}
+                  {template.isPremium && (
+                    <Badge className="absolute top-3 right-3 bg-primary text-primary-foreground border-0 font-medium">
+                      Premium
+                    </Badge>
+                  )}
+
+                  {/* Hover overlay actions */}
+                  <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/40 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="bg-background text-foreground hover:bg-background/90 shadow-md"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/template/${template.id}/preview`);
+                        }}
+                      >
+                        <Eye className="w-4 h-4 mr-1.5" />
+                        Preview
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="shadow-md"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/editor/${template.id}`);
+                        }}
+                      >
+                        <Pencil className="w-4 h-4 mr-1.5" />
+                        Customize
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Body */}
+                <CardContent className="p-4 flex-1 flex flex-col">
+                  <h3 className="font-semibold text-base leading-snug line-clamp-1 group-hover:text-primary transition-colors">
+                    {template.title}
+                  </h3>
+                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">
                     {template.description}
                   </p>
 
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4 fill-primary text-primary" />
-                      <span>{template.rating}</span>
+                  {/* Meta row */}
+                  <div className="mt-4 flex items-center justify-between pt-3 border-t border-border">
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="inline-flex items-center gap-1 font-medium text-foreground">
+                        <Star className="w-3.5 h-3.5 fill-primary text-primary" />
+                        {template.rating}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <Download className="w-3.5 h-3.5" />
+                        {template.downloads.toLocaleString()}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Download className="w-4 h-4" />
-                      <span>{template.downloads}</span>
-                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 px-2 text-xs text-muted-foreground hover:text-primary"
+                      onClick={() => navigate(`/template/${template.id}`)}
+                    >
+                      Details
+                      <Info className="w-3.5 h-3.5 ml-1" />
+                    </Button>
                   </div>
                 </CardContent>
-
-                <CardFooter className="p-4 pt-0 flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => navigate(`/template/${template.id}/preview`)}
-                  >
-                    <Eye className="w-4 h-4 mr-1" />
-                    Preview
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate(`/template/${template.id}`)}
-                  >
-                    <Info className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => navigate(`/editor/${template.id}`)}
-                  >
-                    <Pencil className="w-4 h-4 mr-1" />
-                    Customize
-                  </Button>
-                </CardFooter>
               </Card>
             ))}
           </div>
