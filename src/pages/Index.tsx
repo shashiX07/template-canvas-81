@@ -467,7 +467,7 @@ export default function Index() {
         <div className="container px-6 md:px-10 mb-16 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
           <Reveal>
             <div className="flex items-center gap-3 mb-4">
-              <span className="w-12 h-px bg-background" />
+              <span className="w-12 h-px bg-ink" />
               <span className="font-mono-accent text-xs uppercase tracking-[0.25em]">In motion</span>
             </div>
             <h2 className="font-display text-4xl md:text-6xl font-light leading-[1.05] max-w-2xl">
@@ -516,7 +516,7 @@ export default function Index() {
                 </div>
                 <div className="mt-4 flex items-baseline justify-between gap-3 font-mono-accent text-[10px] uppercase tracking-[0.25em] text-ink-soft">
                   <span>{it.n}</span>
-                  <span className="font-display italic text-base text-background normal-case tracking-normal">{it.t}</span>
+                  <span className="font-display italic text-base text-ink normal-case tracking-normal">{it.t}</span>
                 </div>
               </div>
             ))}
