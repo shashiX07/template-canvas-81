@@ -72,6 +72,12 @@
     --feed-accent: 45 100% 45%;
     --feed-accent-hover: 42 100% 38%;
     --feed-hover: 210 14% 92%;
+
+    /* Smoke / Ink — soft inverted palette (replaces hard black) */
+    --smoke: 40 14% 94%;
+    --smoke-deep: 40 12% 88%;
+    --ink: 30 8% 18%;
+    --ink-soft: 30 6% 32%;
   }
 
   .dark {
