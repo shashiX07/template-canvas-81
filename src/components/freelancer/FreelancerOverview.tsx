@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FreelancerProfile, freelancerTemplateStorage, earningsStorage } from '@/lib/storage';
 import { formatCurrency } from '@/lib/freelancerUtils';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
 interface FreelancerOverviewProps {
@@ -11,6 +12,7 @@ interface FreelancerOverviewProps {
 
 export default function FreelancerOverview({ profile }: FreelancerOverviewProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const templates = freelancerTemplateStorage.getByFreelancerId(profile.userId);
   const earnings = earningsStorage.getByFreelancerId(profile.userId);
   const availableBalance = earningsStorage.getAvailableBalance(profile.userId);
