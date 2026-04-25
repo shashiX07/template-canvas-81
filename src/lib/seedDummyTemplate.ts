@@ -366,7 +366,6 @@ document.addEventListener('DOMContentLoaded', () => {
       { selector: '.forecast', declarations: { display: 'flex', 'justify-content': 'space-between', 'margin-top': '32px', background: 'rgba(255,255,255,0.25)', padding: '14px', 'border-radius': '14px', 'backdrop-filter': 'blur(8px)' } },
       { selector: '.day p:first-child', declarations: { 'font-size': '.75rem', opacity: '.8' } },
       { selector: '.day p:last-child', declarations: { 'font-weight': '700', 'margin-top': '4px' } },
-      { selector: '@keyframes pulse', declarations: {} as any },
     ],
     js: `
 /* Animation defined via CSS keyframes injected at runtime */
