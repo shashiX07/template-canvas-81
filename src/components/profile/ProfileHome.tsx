@@ -444,11 +444,11 @@ const ProfileHome = () => {
           </main>
 
           {/* ============ RIGHT — Suggestions ============ */}
-          <aside className="hidden lg:block self-start">
+          <aside className="hidden lg:block self-start sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto scrollbar-hide">
             <div className="space-y-3">
                 {!currentUser ? (
                   <>
-                    <div className="sticky top-6 bg-feed-surface border border-feed-border rounded-lg p-5 text-center">
+                    <div className="bg-feed-surface border border-feed-border rounded-lg p-5 text-center">
                       <div className="w-12 h-12 mx-auto rounded-full bg-feed-accent/10 flex items-center justify-center mb-3">
                         <Rocket className="w-6 h-6 text-feed-accent" />
                       </div>
@@ -467,7 +467,7 @@ const ProfileHome = () => {
                     </div>
                   </>
                 ) : (
-                  <div className="sticky top-6 bg-feed-surface border border-feed-border rounded-lg p-4">
+                  <div className="bg-feed-surface border border-feed-border rounded-lg p-4">
                     <h3 className="text-sm font-semibold text-feed-text mb-3 flex items-center gap-2">
                       <UserPlus className="w-4 h-4 text-feed-accent" />
                       People to follow
@@ -512,7 +512,7 @@ const ProfileHome = () => {
                 )}
 
                 {/* Trending tags */}
-                <div className="sticky top-[calc(1.5rem+var(--follow-card-h,360px))] bg-feed-surface border border-feed-border rounded-lg p-4">
+                <div className="bg-feed-surface border border-feed-border rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-feed-text mb-3 flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-feed-accent" />
                     Trending tags
