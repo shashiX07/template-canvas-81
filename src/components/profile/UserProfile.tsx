@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Grid3X3, 
+import {
+  Grid3X3,
   UserPlus,
   UserCheck,
   ArrowLeft,
-  Calendar
+  Calendar,
+  Heart,
 } from "lucide-react";
 import { userStorage, type User } from "@/lib/storage";
 import { webieStorage, type Webie } from "@/lib/webieStorage";
@@ -28,14 +28,10 @@ const UserProfile = () => {
     if (userId) {
       const user = userStorage.getById(userId);
       setProfileUser(user);
-      
       if (user) {
-        const webies = webieStorage.getByUserId(user.id).filter(w => w.isPublic);
+        const webies = webieStorage.getByUserId(user.id).filter((w) => w.isPublic);
         setUserWebies(webies);
-        
-        if (currentUser) {
-          setIsFollowing(followStorage.isFollowing(currentUser.id, user.id));
-        }
+        if (currentUser) setIsFollowing(followStorage.isFollowing(currentUser.id, user.id));
       }
     }
   }, [userId, currentUser]);
@@ -46,9 +42,7 @@ const UserProfile = () => {
       navigate("/auth");
       return;
     }
-    
     if (!profileUser) return;
-    
     if (isFollowing) {
       followStorage.unfollow(currentUser.id, profileUser.id);
       setIsFollowing(false);
@@ -56,11 +50,11 @@ const UserProfile = () => {
     } else {
       followStorage.follow(currentUser.id, profileUser.id);
       setIsFollowing(true);
-      // Send notification
-      notificationStorage.notifyFollow(
-        profileUser.id,
-        { id: currentUser.id, name: currentUser.name, avatar: currentUser.avatar }
-      );
+      notificationStorage.notifyFollow(profileUser.id, {
+        id: currentUser.id,
+        name: currentUser.name,
+        avatar: currentUser.avatar,
+      });
       toast.success("Following!");
     }
   };
@@ -69,8 +63,8 @@ const UserProfile = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <p className="text-muted-foreground mb-4">User not found</p>
-          <Button onClick={() => navigate(-1)}>Go Back</Button>
+          <p className="font-display italic text-2xl text-foreground/60 mb-4">User not found</p>
+          <Button onClick={() => navigate(-1)}>Go back</Button>
         </div>
       </div>
     );
@@ -80,141 +74,165 @@ const UserProfile = () => {
   const followingCount = followStorage.getFollowingCount(profileUser.id);
   const isOwnProfile = currentUser?.id === profileUser.id;
 
+  const stats = [
+    { label: "Webies", value: userWebies.length },
+    { label: "Followers", value: followerCount },
+    { label: "Following", value: followingCount },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Back Button */}
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="mb-4"
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
+      <section className="relative border-b border-foreground/10 overflow-hidden">
+        <div className="absolute -top-32 -right-32 w-[420px] h-[420px] rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="max-w-[1100px] mx-auto px-6 py-10 relative">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mb-6 text-foreground/60"
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Button>
 
-        {/* Profile Header */}
-        <div className="flex flex-col md:flex-row items-start gap-8 mb-8">
-          {/* Avatar */}
-          <div className="shrink-0">
-            <Avatar className="w-32 h-32 md:w-40 md:h-40 border-4 border-background ring-2 ring-muted">
-              <AvatarImage src={profileUser.avatar} />
-              <AvatarFallback className="text-4xl bg-primary/15 text-primary">
-                {profileUser.name.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+          <div className="flex items-center gap-3 mb-5">
+            <span className="w-10 h-px bg-foreground" />
+            <span className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/60">
+              A creator
+            </span>
           </div>
 
-          {/* Profile Info */}
-          <div className="flex-1 w-full">
-            {/* Username and Actions */}
-            <div className="flex flex-wrap items-center gap-4 mb-4">
-              <h1 className="text-xl font-semibold">{profileUser.name}</h1>
-              
-              {!isOwnProfile && currentUser && (
-                <Button 
-                  variant={isFollowing ? "outline" : "default"}
-                  size="sm"
-                  onClick={handleFollow}
-                >
-                  {isFollowing ? (
-                    <>
-                      <UserCheck className="w-4 h-4 mr-2" />
-                      Following
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Follow
-                    </>
-                  )}
-                </Button>
-              )}
-
-              {isOwnProfile && (
-                <Button 
-                  variant="secondary" 
-                  size="sm"
-                  onClick={() => navigate("/profile/details")}
-                >
-                  Edit Profile
-                </Button>
-              )}
-            </div>
-
-            {/* Stats */}
-            <div className="flex gap-6 mb-4 text-sm">
-              <div>
-                <span className="font-semibold">{userWebies.length}</span>
-                <span className="text-muted-foreground ml-1">webies</span>
-              </div>
-              <div>
-                <span className="font-semibold">{followerCount}</span>
-                <span className="text-muted-foreground ml-1">followers</span>
-              </div>
-              <div>
-                <span className="font-semibold">{followingCount}</span>
-                <span className="text-muted-foreground ml-1">following</span>
-              </div>
-            </div>
-
-            {/* Bio Section */}
-            <div className="space-y-1">
-              <p className="font-medium">{profileUser.name}</p>
-              <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                <Calendar className="w-3 h-3" />
-                Joined {new Date(profileUser.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Content Tabs */}
-        <Tabs defaultValue="webies" className="w-full">
-          <TabsList className="w-full justify-center border-t rounded-none h-12 bg-transparent p-0">
-            <TabsTrigger 
-              value="webies" 
-              className="flex-1 max-w-[200px] rounded-none border-t-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent gap-2"
-            >
-              <Grid3X3 className="w-4 h-4" />
-              Webies
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="webies" className="mt-4">
-            {userWebies.length === 0 ? (
-              <div className="text-center py-16">
-                <Grid3X3 className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Webies Yet</h3>
-                <p className="text-muted-foreground">
-                  This user hasn't shared any webies yet
+          <div className="flex flex-col md:flex-row items-start gap-10">
+            <div className="shrink-0">
+              <div className="relative bg-background border border-foreground/10 p-3 pb-5 rounded-sm shadow-2xl rotate-[2deg]">
+                <Avatar className="w-36 h-36 md:w-44 md:h-44 rounded-sm">
+                  <AvatarImage src={profileUser.avatar} className="object-cover" />
+                  <AvatarFallback className="text-5xl bg-muted text-foreground rounded-sm font-display italic">
+                    {profileUser.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <p className="font-display italic text-sm text-foreground/70 text-center mt-3">
+                  {profileUser.name.split(" ")[0]}
                 </p>
               </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-1">
-                {userWebies.map((webie) => (
-                  <div 
-                    key={webie.id}
-                    className="aspect-square bg-muted overflow-hidden cursor-pointer group relative"
-                    onClick={() => navigate(`/webie/${webie.id}`)}
-                  >
-                    <img
-                      src={webie.thumbnail}
-                      alt={webie.title}
-                      className="w-full h-full object-cover group-hover:opacity-80 transition-opacity"
-                    />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <div className="text-white text-center text-sm">
-                        <p className="font-semibold">{webie.likes.length} likes</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <h1 className="font-display text-5xl md:text-6xl font-light leading-[1.02] tracking-tight">
+                {profileUser.name.split(" ")[0]}{" "}
+                <span className="italic">
+                  {profileUser.name.split(" ").slice(1).join(" ") || "."}
+                </span>
+              </h1>
+              <div className="flex items-center gap-2 mt-4 font-mono-accent text-[11px] uppercase tracking-[0.2em] text-foreground/55">
+                <Calendar className="w-3 h-3" />
+                Joined{" "}
+                {new Date(profileUser.createdAt).toLocaleDateString("en-US", {
+                  month: "long",
+                  year: "numeric",
+                })}
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
+
+              <div className="flex flex-wrap items-center gap-2 mt-6">
+                {!isOwnProfile && currentUser && (
+                  <Button
+                    variant={isFollowing ? "outline" : "default"}
+                    onClick={handleFollow}
+                  >
+                    {isFollowing ? (
+                      <>
+                        <UserCheck className="w-4 h-4" />
+                        Following
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="w-4 h-4" />
+                        Follow
+                      </>
+                    )}
+                  </Button>
+                )}
+                {isOwnProfile && (
+                  <Button onClick={() => navigate("/profile/details")}>Edit profile</Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-px mt-12 border-t border-foreground/10 pt-8">
+            {stats.map((s) => (
+              <div key={s.label}>
+                <div className="font-display text-4xl md:text-5xl font-light tracking-tight">
+                  {s.value}
+                </div>
+                <div className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/55 mt-1">
+                  {s.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="max-w-[1100px] mx-auto px-6 py-12">
+        <div className="flex items-end justify-between mb-6">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <span className="w-6 h-px bg-foreground" />
+              <span className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/60">
+                The collection
+              </span>
+            </div>
+            <h2 className="font-display text-3xl font-light tracking-tight">
+              Things <span className="italic">they made</span>
+            </h2>
+          </div>
+          <span className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/40">
+            {userWebies.length} entries
+          </span>
+        </div>
+
+        {userWebies.length === 0 ? (
+          <div className="border border-dashed border-foreground/15 rounded-2xl py-20 text-center bg-muted/20">
+            <Grid3X3 className="w-10 h-10 mx-auto text-foreground/30 mb-3" />
+            <h3 className="font-display text-2xl font-light mb-1">
+              Nothing <span className="italic">shared yet</span>
+            </h3>
+            <p className="text-sm text-foreground/55">
+              This creator hasn't published a webie.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            {userWebies.map((webie, idx) => (
+              <button
+                key={webie.id}
+                onClick={() => navigate(`/webie/${webie.id}`)}
+                className={`group relative overflow-hidden rounded-xl bg-muted border border-foreground/10 ${
+                  idx % 7 === 0 ? "md:col-span-2 md:row-span-2 aspect-square" : "aspect-square"
+                }`}
+              >
+                <img
+                  src={webie.thumbnail}
+                  alt={webie.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
+                  <span className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-background/80">
+                    №{String(idx + 1).padStart(2, "0")}
+                  </span>
+                  <p className="font-display italic text-background text-lg line-clamp-2">
+                    {webie.title}
+                  </p>
+                  <p className="font-mono-accent text-[10px] uppercase tracking-[0.2em] text-background/70 mt-1 flex items-center gap-1.5">
+                    <Heart className="w-3 h-3" />
+                    {webie.likes.length} likes
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
