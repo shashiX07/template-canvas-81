@@ -4,7 +4,7 @@ import { ProfileContent } from "@/components/profile/ProfileContent";
 
 const Profile = () => {
   return (
-    <div className="dark dashboard-shell">
+    <div className="dashboard-shell">
       <SidebarProvider>
         <div className="flex min-h-screen w-full bg-background text-foreground">
           <ProfileSidebar />
