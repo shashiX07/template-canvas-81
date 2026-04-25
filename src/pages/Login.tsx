@@ -47,12 +47,19 @@ const Login = () => {
   const [resetSent, setResetSent] = useState(false);
   const [error, setError] = useState("");
 
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
+  const destinationFor = (u: { role?: string; isAdmin?: boolean; isSuperAdmin?: boolean } | null | undefined) => {
+    if (!u) return "/";
+    if (u.isSuperAdmin || u.isAdmin || u.role === "admin") return "/admin";
+    if (u.role === "freelancer") return "/freelancer/dashboard";
+    return "/profile";
+  };
+
   useEffect(() => {
-    if (isAuthenticated) navigate("/");
-  }, [isAuthenticated, navigate]);
+    if (isAuthenticated) navigate(destinationFor(user));
+  }, [isAuthenticated, user, navigate]);
 
   const meta = STEPS[step - 1];
 
@@ -67,7 +74,9 @@ const Login = () => {
       setError("Invalid credentials. Try again.");
       return;
     }
-    navigate("/");
+    // useAuth.login sets state synchronously; read the freshest user from storage
+    const stored = JSON.parse(localStorage.getItem("currentUser") || "null");
+    navigate(destinationFor(stored));
   };
 
   const handleReset = (e: React.FormEvent) => {
