@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowRight, ArrowUpRight, Mail, Lock, Quote } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ArrowRight,
+  ArrowLeft,
+  ArrowUpRight,
+  Mail,
+  Lock,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,12 +17,36 @@ import { cn } from "@/lib/utils";
 import heroPortrait from "@/assets/hero-portrait.jpg";
 import letterStill from "@/assets/letter-still.jpg";
 import handsPolaroid from "@/assets/hands-polaroid.jpg";
-import logo from "@/assets/webilio-logo.png";
+
+const STEPS = [
+  {
+    n: "01",
+    kicker: "Returning",
+    title: "Welcome back.",
+    sub: "Your drafts are right where you left them. Sign in to keep going.",
+    image: letterStill,
+    quote: "Pick up the pen exactly where it fell.",
+    by: "The studio",
+  },
+  {
+    n: "02",
+    kicker: "Lost the key?",
+    title: "Reset your password.",
+    sub: "Drop your email and we'll send a fresh link to your inbox.",
+    image: handsPolaroid,
+    quote: "Forgetting is human. Resetting is one tap.",
+    by: "Support desk",
+  },
+];
 
 const Login = () => {
+  const [step, setStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetSent, setResetSent] = useState(false);
   const [error, setError] = useState("");
+
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
@@ -24,10 +54,15 @@ const Login = () => {
     if (isAuthenticated) navigate("/");
   }, [isAuthenticated, navigate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const meta = STEPS[step - 1];
+
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!email || !password) return;
+    if (!email || !password) {
+      setError("Please enter your email and password.");
+      return;
+    }
     if (!login(email, password)) {
       setError("Invalid credentials. Try again.");
       return;
@@ -35,198 +70,314 @@ const Login = () => {
     navigate("/");
   };
 
+  const handleReset = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (!/^\S+@\S+\.\S+$/.test(resetEmail)) {
+      setError("Please enter a valid email.");
+      return;
+    }
+    setResetSent(true);
+  };
+
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-hidden">
-      <div className="grid lg:grid-cols-[1.1fr_1fr] min-h-screen">
-        {/* LEFT — Editorial canvas */}
-        <aside className="relative hidden lg:flex flex-col justify-between bg-primary text-primary-foreground p-10 xl:p-14 overflow-hidden">
-          <div
-            className="absolute inset-0 opacity-[0.08] mix-blend-multiply pointer-events-none"
-            style={{
-              backgroundImage:
-                "radial-gradient(hsl(0 0% 0% / 0.6) 1px, transparent 1px)",
-              backgroundSize: "4px 4px",
-            }}
-          />
-          <div className="absolute -top-32 -left-24 w-[420px] h-[420px] rounded-full bg-primary-foreground/5 blur-3xl" />
-          <div className="absolute -bottom-32 -right-24 w-[480px] h-[480px] rounded-full bg-primary-foreground/10 blur-3xl" />
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-primary/15 blur-3xl" />
+        <div className="absolute bottom-0 -right-40 w-[500px] h-[500px] rounded-full bg-primary/10 blur-3xl" />
+      </div>
 
-          <div className="relative z-10 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-md bg-foreground flex items-center justify-center overflow-hidden">
-                <img src={logo} alt="Webilio" className="w-7 h-7 object-contain" />
-              </div>
-              <span className="font-display text-2xl tracking-tight">Webilio</span>
-            </Link>
-            <span className="font-mono-accent text-[11px] uppercase tracking-[0.3em] opacity-70">
-              Issue №24 · Spring
-            </span>
-          </div>
+      {/* Header */}
+      <header className="relative z-20 container px-6 md:px-10 py-6 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-3 group">
+          <span className="w-8 h-px bg-foreground transition-all group-hover:w-12" />
+          <span className="font-mono-accent text-[11px] uppercase tracking-[0.25em] text-foreground/70 group-hover:text-foreground">
+            Webilio · home
+          </span>
+        </Link>
+        <Link to="/signup">
+          <Button variant="ghost" className="text-xs font-mono-accent uppercase tracking-[0.2em]">
+            New here? Start your first piece
+            <ArrowUpRight className="ml-1 w-3.5 h-3.5" />
+          </Button>
+        </Link>
+      </header>
 
-          <div className="relative z-10 max-w-xl">
-            <div className="font-mono-accent text-[11px] uppercase tracking-[0.3em] opacity-70 mb-6">
-              ◆ The studio · sign in
+      {/* Two-column layout — mirrored from Signup */}
+      <div className="relative z-10 container px-6 md:px-10 pb-20">
+        <div className="grid lg:grid-cols-12 gap-10 lg:gap-16 items-start">
+          {/* RIGHT-FEEL on desktop: editorial column, placed left */}
+          <aside className="lg:col-span-5 lg:sticky lg:top-10 self-start">
+            <div className="flex items-center gap-3 mb-8">
+              <span className="w-12 h-px bg-foreground" />
+              <span className="font-mono-accent text-[11px] uppercase tracking-[0.25em] text-foreground/70">
+                {meta.kicker} · No.{meta.n}
+              </span>
             </div>
-            <h1 className="font-display text-[clamp(2.5rem,5vw,4.5rem)] leading-[0.95] tracking-tight">
-              Welcome <em className="italic font-light">back</em>.
-              <br />
-              Pick up the pen.
-            </h1>
-            <p className="mt-6 text-base lg:text-lg text-primary-foreground/80 leading-relaxed max-w-md">
-              Your drafts are right where you left them. Sign in to keep building.
-            </p>
 
-            <div className="relative mt-12 h-56 hidden xl:block">
-              {[
-                { src: heroPortrait, rot: -6, left: 0, top: 0, label: "studio, no.01" },
-                { src: letterStill, rot: 4, left: 160, top: 24, label: "letters · 03" },
-                { src: handsPolaroid, rot: -2, left: 320, top: 8, label: "hands at work" },
-              ].map((p, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 20, rotate: p.rot * 1.4 }}
-                  animate={{ opacity: 1, y: 0, rotate: p.rot }}
-                  transition={{ duration: 0.8, delay: 0.2 + i * 0.2 }}
-                  className="absolute w-44 bg-background p-2 pb-6 shadow-2xl"
-                  style={{ left: p.left, top: p.top }}
-                >
-                  <img src={p.src} alt="" className="w-full h-44 object-cover" />
-                  <div className="font-mono-accent text-[10px] text-foreground/60 mt-1 px-1">
-                    — {p.label}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`title-${step}`}
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: -20, opacity: 0 }}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <h1 className="font-display text-5xl md:text-6xl font-light leading-[1.02] tracking-tight">
+                  {meta.title.split(" ").map((w, i, a) =>
+                    i === a.length - 1 ? (
+                      <span key={i} className="italic">{w}</span>
+                    ) : (
+                      <span key={i}>{w} </span>
+                    ),
+                  )}
+                </h1>
+                <p className="mt-6 text-foreground/70 text-lg leading-[1.7] max-w-md">
+                  {meta.sub}
+                </p>
+              </motion.div>
+            </AnimatePresence>
 
-          <div className="relative z-10 space-y-6">
-            <div className="flex gap-3 max-w-md">
-              <Quote className="w-5 h-5 mt-1 shrink-0 opacity-60" />
-              <p className="font-display italic text-lg leading-snug">
-                "It feels less like software and more like a paper notebook
-                that happens to publish."
-              </p>
-            </div>
-            <div className="flex items-center justify-between font-mono-accent text-[11px] uppercase tracking-[0.25em] opacity-70 border-t border-primary-foreground/20 pt-4">
-              <span>est. 2024</span>
-              <span>made with care</span>
-              <span>vol. iv</span>
-            </div>
-          </div>
-        </aside>
-
-        {/* RIGHT — Form */}
-        <main className="relative flex flex-col min-h-screen bg-background">
-          <div className="lg:hidden flex items-center justify-between p-6 border-b border-border">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-md bg-primary flex items-center justify-center overflow-hidden">
-                <img src={logo} alt="Webilio" className="w-6 h-6 object-contain" />
-              </div>
-              <span className="font-display text-xl">Webilio</span>
-            </Link>
-            <Link
-              to="/signup"
-              className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-muted-foreground"
-            >
-              Join us →
-            </Link>
-          </div>
-
-          <div className="flex-1 flex items-center justify-center px-6 py-12 lg:px-16">
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45 }}
-              className="w-full max-w-md"
-            >
-              <div className="font-mono-accent text-[11px] uppercase tracking-[0.3em] text-muted-foreground mb-3">
-                Chapter 01 · Welcome back
-              </div>
-              <h2 className="font-display text-5xl leading-[0.95] tracking-tight">
-                Good to see <em className="italic font-light">you</em> again.
-              </h2>
-              <p className="mt-4 text-muted-foreground">
-                Pick up exactly where your last draft left off.
-              </p>
-
-              <form onSubmit={handleSubmit} className="space-y-5 mt-8">
-                <LoginField
-                  id="login-email"
-                  label="Email"
-                  icon={<Mail className="w-4 h-4" />}
-                  type="email"
-                  placeholder="hello@studio.com"
-                  value={email}
-                  onChange={setEmail}
-                />
-                <LoginField
-                  id="login-password"
-                  label="Password"
-                  icon={<Lock className="w-4 h-4" />}
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={setPassword}
-                  right={
-                    <button
-                      type="button"
-                      className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground"
-                    >
-                      Forgot?
-                    </button>
-                  }
-                />
-
-                {error && (
+            {/* Polaroid stack — distinct from Signup's single tilted card */}
+            <div className="mt-12 relative hidden lg:block h-72">
+              <AnimatePresence mode="wait">
+                {step === 1 ? (
                   <motion.div
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="border-l-2 border-destructive bg-destructive/5 px-4 py-3 text-sm text-destructive"
+                    key="stack-1"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="absolute inset-0"
                   >
-                    <span className="font-mono-accent text-[10px] uppercase tracking-[0.25em] block mb-1">
-                      Note
-                    </span>
-                    {error}
+                    {[
+                      { src: heroPortrait, rot: -8, left: 0, top: 0, label: "studio · 01" },
+                      { src: letterStill, rot: 5, left: 130, top: 30, label: "letters · 03" },
+                      { src: handsPolaroid, rot: -3, left: 260, top: 10, label: "hands · 07" },
+                    ].map((p, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, y: 20, rotate: p.rot * 1.5 }}
+                        animate={{ opacity: 1, y: 0, rotate: p.rot }}
+                        transition={{ duration: 0.7, delay: 0.15 + i * 0.12 }}
+                        className="absolute w-40 bg-background p-2 pb-5 shadow-2xl ring-1 ring-foreground/5"
+                        style={{ left: p.left, top: p.top }}
+                      >
+                        <img src={p.src} alt="" className="w-full h-40 object-cover" />
+                        <div className="font-mono-accent text-[10px] text-foreground/50 mt-1 px-1">
+                          — {p.label}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="stack-2"
+                    initial={{ opacity: 0, scale: 0.96, rotate: 2 }}
+                    animate={{ opacity: 1, scale: 1, rotate: 1.5 }}
+                    exit={{ opacity: 0, scale: 0.96 }}
+                    transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                    className="overflow-hidden rounded-3xl shadow-2xl ring-1 ring-foreground/10 aspect-[4/5] max-w-[280px]"
+                  >
+                    <img src={meta.image} alt={meta.title} className="w-full h-full object-cover" />
                   </motion.div>
                 )}
+              </AnimatePresence>
+            </div>
 
-                <Button type="submit" size="lg" className="w-full group">
-                  Open the studio
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
-
-                <div className="border-l-2 border-primary pl-4 py-2 bg-primary/5">
-                  <div className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-1">
-                    Demo desk
-                  </div>
-                  <div className="text-sm font-mono-accent">
-                    admin@example.com · admin123
-                  </div>
-                </div>
-
-                <p className="text-center text-sm text-muted-foreground pt-2">
-                  New here?{" "}
-                  <Link
-                    to="/signup"
-                    className="text-foreground underline underline-offset-4 decoration-primary decoration-2 hover:decoration-foreground"
-                  >
-                    Start your first piece
-                  </Link>
-                </p>
-              </form>
-            </motion.div>
-          </div>
-
-          <div className="border-t border-border px-6 lg:px-16 py-4 flex items-center justify-between font-mono-accent text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-            <span>© Webilio Studio</span>
-            <Link
-              to="/freelancer/auth"
-              className="hover:text-foreground transition-colors flex items-center gap-1"
+            <motion.div
+              key={`q-${step}`}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="hidden lg:block mt-10 max-w-sm border-l-2 border-foreground/20 pl-5"
             >
-              Apply as freelancer <ArrowUpRight className="w-3 h-3" />
-            </Link>
-          </div>
-        </main>
+              <div className="font-display italic text-lg leading-snug text-foreground">
+                "{meta.quote}"
+              </div>
+              <div className="mt-3 flex items-center gap-2 font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/50">
+                <span className="w-6 h-px bg-foreground/30" />
+                {meta.by}
+              </div>
+            </motion.div>
+          </aside>
+
+          {/* RIGHT — Form */}
+          <main className="lg:col-span-7">
+            {/* Chapter rail — single bar with subtle scan, distinct from Signup's segmented progress */}
+            <div className="mb-10">
+              <div className="relative h-[3px] rounded-full bg-foreground/10 overflow-hidden">
+                <motion.div
+                  initial={false}
+                  animate={{ width: step === 1 ? "55%" : "100%" }}
+                  transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  className="absolute inset-y-0 left-0 bg-foreground"
+                />
+              </div>
+              <div className="mt-3 flex justify-between font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/50">
+                <span>Chapter 0{step} · {meta.kicker}</span>
+                <span>{step === 1 ? "Sign in" : "Reset"}</span>
+              </div>
+            </div>
+
+            <div className="bg-background border border-foreground/10 rounded-3xl p-7 md:p-10 shadow-xl">
+              <AnimatePresence mode="wait">
+                {step === 1 ? (
+                  <motion.form
+                    key="step-1"
+                    onSubmit={handleLogin}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                    className="space-y-6"
+                  >
+                    <LoginField
+                      id="login-email"
+                      label="Email"
+                      icon={<Mail className="w-4 h-4" />}
+                      type="email"
+                      placeholder="hello@studio.com"
+                      value={email}
+                      onChange={setEmail}
+                    />
+                    <LoginField
+                      id="login-password"
+                      label="Password"
+                      icon={<Lock className="w-4 h-4" />}
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={setPassword}
+                      right={
+                        <button
+                          type="button"
+                          onClick={() => { setStep(2); setError(""); setResetSent(false); }}
+                          className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground"
+                        >
+                          Forgot?
+                        </button>
+                      }
+                    />
+
+                    {error && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="border-l-2 border-destructive bg-destructive/5 px-4 py-3 text-sm text-destructive"
+                      >
+                        <span className="font-mono-accent text-[10px] uppercase tracking-[0.25em] block mb-1">
+                          Note
+                        </span>
+                        {error}
+                      </motion.div>
+                    )}
+
+                    <Button type="submit" size="lg" className="w-full group">
+                      Open the studio
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+
+                    <div className="border-l-2 border-primary pl-4 py-2 bg-primary/5 rounded-r">
+                      <div className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-1">
+                        Demo desk
+                      </div>
+                      <div className="text-sm font-mono-accent">
+                        admin@example.com · admin123
+                      </div>
+                    </div>
+
+                    <p className="text-center text-sm text-muted-foreground pt-2">
+                      New to the studio?{" "}
+                      <Link
+                        to="/signup"
+                        className="text-foreground underline underline-offset-4 decoration-primary decoration-2"
+                      >
+                        Start your first piece
+                      </Link>
+                    </p>
+                  </motion.form>
+                ) : (
+                  <motion.form
+                    key="step-2"
+                    onSubmit={handleReset}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                    className="space-y-6"
+                  >
+                    {!resetSent ? (
+                      <>
+                        <LoginField
+                          id="reset-email"
+                          label="Account email"
+                          icon={<Mail className="w-4 h-4" />}
+                          type="email"
+                          placeholder="you@studio.com"
+                          value={resetEmail}
+                          onChange={setResetEmail}
+                        />
+
+                        {error && (
+                          <div className="border-l-2 border-destructive bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                            <span className="font-mono-accent text-[10px] uppercase tracking-[0.25em] block mb-1">
+                              Note
+                            </span>
+                            {error}
+                          </div>
+                        )}
+
+                        <div className={cn("flex gap-3 pt-2")}>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => { setStep(1); setError(""); }}
+                          >
+                            <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                          </Button>
+                          <Button type="submit" size="lg" className="flex-1 group">
+                            Send reset link
+                            <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-6 space-y-4">
+                        <div className="font-display text-3xl">
+                          Check your <em className="italic font-light">inbox</em>.
+                        </div>
+                        <p className="text-muted-foreground max-w-sm mx-auto">
+                          If <span className="text-foreground">{resetEmail}</span> matches an account,
+                          a fresh link is on its way.
+                        </p>
+                        <Button
+                          type="button"
+                          size="lg"
+                          onClick={() => { setStep(1); setResetSent(false); setResetEmail(""); }}
+                          className="group"
+                        >
+                          Back to sign in
+                          <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                        </Button>
+                      </div>
+                    )}
+                  </motion.form>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="mt-6 flex items-center justify-between font-mono-accent text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+              <span>© Webilio Studio</span>
+              <Link
+                to="/freelancer/auth"
+                className="hover:text-foreground transition-colors flex items-center gap-1"
+              >
+                Apply as freelancer <ArrowUpRight className="w-3 h-3" />
+              </Link>
+            </div>
+          </main>
+        </div>
       </div>
     </div>
   );
@@ -256,7 +407,7 @@ const LoginField = ({
     <div className="flex items-center justify-between">
       <Label
         htmlFor={id}
-        className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-muted-foreground"
+        className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/60"
       >
         {label}
       </Label>
@@ -272,8 +423,7 @@ const LoginField = ({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        required
-        className={cn("pl-12")}
+        className="pl-12"
       />
     </div>
   </div>
