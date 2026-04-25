@@ -286,22 +286,6 @@ export default function FreelancerAuth() {
   const meta = STEPS[step - 1];
   const progress = (step / totalSteps) * 100;
 
-  /* ─── Reusable field with floating icon ─── */
-  const Field = ({
-    icon: Icon,
-    children,
-  }: {
-    icon?: any;
-    children: React.ReactNode;
-  }) => (
-    <div className="relative">
-      {Icon && (
-        <Icon className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40 pointer-events-none z-10" />
-      )}
-      <div className={Icon ? "[&>input]:pl-12" : ""}>{children}</div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* ambient blobs */}
