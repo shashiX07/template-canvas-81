@@ -48,7 +48,7 @@ export default function FreelancerOverview({ profile }: FreelancerOverviewProps)
             </span>
           </div>
           <h1 className="font-display text-5xl md:text-6xl font-light leading-[1.02] tracking-tight">
-            Hello, <span className="italic">{(profile.displayName || 'maker').split(' ')[0]}</span>.
+            Hello, <span className="italic">{(user?.name || profile.professionalTitle || 'maker').split(' ')[0]}</span>.
           </h1>
           <p className="mt-5 max-w-xl text-foreground/65 text-lg leading-[1.7]">
             Your work, your numbers, your next move — all on one quiet page.
