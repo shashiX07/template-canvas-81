@@ -3,18 +3,25 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Grid3X3, 
-  Bookmark, 
-  Settings, 
+import {
+  Grid3X3,
+  Bookmark,
+  Settings,
   Link as LinkIcon,
   MapPin,
-  Calendar
+  Calendar,
+  Pencil,
+  Heart,
 } from "lucide-react";
 import { userStorage } from "@/lib/storage";
 import { webieStorage, type Webie } from "@/lib/webieStorage";
@@ -32,32 +39,19 @@ export function ProfileDetails() {
     name: user?.name || "",
     bio: "",
     website: "",
-    location: ""
+    location: "",
   });
 
   useEffect(() => {
     if (user) {
-      loadUserWebies();
-      loadSavedWebies();
-    }
-  }, [user]);
-
-  const loadUserWebies = () => {
-    if (user) {
-      const webies = webieStorage.getByUserId(user.id);
-      setUserWebies(webies);
-    }
-  };
-
-  const loadSavedWebies = () => {
-    if (user) {
+      setUserWebies(webieStorage.getByUserId(user.id));
       const savedIds = savedWebieStorage.getSavedByUser(user.id);
       const webies = savedIds
-        .map(id => webieStorage.getById(id))
+        .map((id) => webieStorage.getById(id))
         .filter((w): w is Webie => w !== null);
       setSavedWebies(webies);
     }
-  };
+  }, [user]);
 
   const handleUpdateProfile = () => {
     if (user) {
@@ -75,223 +69,278 @@ export function ProfileDetails() {
   const followerCount = followStorage.getFollowerCount(user.id);
   const followingCount = followStorage.getFollowingCount(user.id);
 
+  const stats = [
+    { label: "Webies", value: userWebies.length },
+    { label: "Followers", value: followerCount },
+    { label: "Following", value: followingCount },
+    { label: "Saved", value: savedWebies.length },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Profile Header - Instagram Style */}
-        <div className="flex flex-col md:flex-row items-start gap-8 mb-8">
-          {/* Avatar */}
-          <div className="shrink-0">
-            <Avatar className="w-32 h-32 md:w-40 md:h-40 border-4 border-background ring-2 ring-muted">
-              <AvatarImage src={user.avatar} />
-              <AvatarFallback className="text-4xl bg-primary/15 text-primary">
-                {user.name.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+      {/* HERO */}
+      <section className="relative border-b border-foreground/10 overflow-hidden">
+        <div className="absolute -top-32 -right-32 w-[420px] h-[420px] rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="max-w-[1100px] mx-auto px-6 py-14 relative">
+          <div className="flex items-center gap-3 mb-5">
+            <span className="w-10 h-px bg-foreground" />
+            <span className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/60">
+              Profile · No.05
+            </span>
           </div>
 
-          {/* Profile Info */}
-          <div className="flex-1 w-full">
-            {/* Username and Actions */}
-            <div className="flex flex-wrap items-center gap-4 mb-4">
-              <h1 className="text-xl font-semibold">{user.name}</h1>
-              
-              <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="secondary" size="sm">
-                    Edit Profile
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Edit Profile</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label>Name</Label>
-                      <Input
-                        value={editForm.name}
-                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Bio</Label>
-                      <Textarea
-                        value={editForm.bio}
-                        onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
-                        placeholder="Tell us about yourself..."
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Website</Label>
-                      <Input
-                        value={editForm.website}
-                        onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
-                        placeholder="https://yourwebsite.com"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Location</Label>
-                      <Input
-                        value={editForm.location}
-                        onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
-                        placeholder="City, Country"
-                      />
-                    </div>
-                    <Button onClick={handleUpdateProfile} className="w-full">
-                      Save Changes
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => navigate("/profile/settings")}
-              >
-                <Settings className="w-5 h-5" />
-              </Button>
-            </div>
-
-            {/* Stats */}
-            <div className="flex gap-6 mb-4 text-sm">
-              <div>
-                <span className="font-semibold">{userWebies.length}</span>
-                <span className="text-muted-foreground ml-1">webies</span>
-              </div>
-              <div className="cursor-pointer hover:opacity-80">
-                <span className="font-semibold">{followerCount}</span>
-                <span className="text-muted-foreground ml-1">followers</span>
-              </div>
-              <div className="cursor-pointer hover:opacity-80">
-                <span className="font-semibold">{followingCount}</span>
-                <span className="text-muted-foreground ml-1">following</span>
+          <div className="flex flex-col md:flex-row items-start gap-10">
+            {/* Polaroid avatar */}
+            <div className="shrink-0">
+              <div className="relative bg-background border border-foreground/10 p-3 pb-5 rounded-sm shadow-2xl rotate-[-2deg]">
+                <Avatar className="w-40 h-40 md:w-48 md:h-48 rounded-sm">
+                  <AvatarImage src={user.avatar} className="object-cover" />
+                  <AvatarFallback className="text-5xl bg-muted text-foreground rounded-sm font-display italic">
+                    {user.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <p className="font-display italic text-sm text-foreground/70 text-center mt-3">
+                  {user.name.split(" ")[0]}, today
+                </p>
               </div>
             </div>
 
-            {/* Bio Section */}
-            <div className="space-y-1">
-              <p className="font-medium">{user.name}</p>
+            <div className="flex-1 min-w-0 pt-2">
+              <h1 className="font-display text-5xl md:text-6xl font-light leading-[1.02] tracking-tight">
+                {user.name.split(" ")[0]}{" "}
+                <span className="italic">{user.name.split(" ").slice(1).join(" ") || "."}</span>
+              </h1>
               {editForm.bio && (
-                <p className="text-sm">{editForm.bio}</p>
+                <p className="mt-4 text-foreground/70 text-lg leading-[1.7] max-w-xl">
+                  {editForm.bio}
+                </p>
               )}
-              <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+
+              <div className="flex flex-wrap gap-x-5 gap-y-2 mt-5 font-mono-accent text-[11px] uppercase tracking-[0.2em] text-foreground/55">
                 {editForm.location && (
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-1.5">
                     <MapPin className="w-3 h-3" />
                     {editForm.location}
                   </span>
                 )}
                 {editForm.website && (
-                  <a 
-                    href={editForm.website} 
-                    target="_blank" 
+                  <a
+                    href={editForm.website}
+                    target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-primary hover:underline"
+                    className="flex items-center gap-1.5 hover:text-foreground"
                   >
                     <LinkIcon className="w-3 h-3" />
-                    {editForm.website.replace(/^https?:\/\//, '')}
+                    {editForm.website.replace(/^https?:\/\//, "")}
                   </a>
                 )}
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1.5">
                   <Calendar className="w-3 h-3" />
-                  Joined {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  Joined{" "}
+                  {new Date(user.createdAt).toLocaleDateString("en-US", {
+                    month: "long",
+                    year: "numeric",
+                  })}
                 </span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 mt-6">
+                <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Pencil className="w-4 h-4" />
+                      Edit profile
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle className="font-display text-3xl font-light">
+                        Edit <span className="italic">profile</span>
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                      <div className="space-y-2">
+                        <Label className="font-mono-accent text-[10px] uppercase tracking-[0.25em]">
+                          Name
+                        </Label>
+                        <Input
+                          value={editForm.name}
+                          onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="font-mono-accent text-[10px] uppercase tracking-[0.25em]">
+                          Bio
+                        </Label>
+                        <Textarea
+                          value={editForm.bio}
+                          onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                          placeholder="A line or two about you…"
+                          className="rounded-2xl"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="font-mono-accent text-[10px] uppercase tracking-[0.25em]">
+                          Website
+                        </Label>
+                        <Input
+                          value={editForm.website}
+                          onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
+                          placeholder="https://yourwebsite.com"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="font-mono-accent text-[10px] uppercase tracking-[0.25em]">
+                          Location
+                        </Label>
+                        <Input
+                          value={editForm.location}
+                          onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                          placeholder="City, Country"
+                        />
+                      </div>
+                      <Button onClick={handleUpdateProfile} className="w-full" size="lg">
+                        Save changes
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                <Button variant="outline" onClick={() => navigate("/profile/settings")}>
+                  <Settings className="w-4 h-4" />
+                  Settings
+                </Button>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full justify-center border-t rounded-none h-12 bg-transparent p-0">
-            <TabsTrigger 
-              value="webies" 
-              className="flex-1 max-w-[200px] rounded-none border-t-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent gap-2"
+          {/* Stats strip */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-px mt-12 border-t border-foreground/10 pt-8">
+            {stats.map((s) => (
+              <div key={s.label} className="px-2">
+                <div className="font-display text-4xl md:text-5xl font-light tracking-tight">
+                  {s.value}
+                </div>
+                <div className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/55 mt-1">
+                  {s.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Tabs + grids */}
+      <div className="max-w-[1100px] mx-auto px-6 py-12">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="bg-transparent p-0 h-auto gap-2">
+            <TabsTrigger
+              value="webies"
+              className="rounded-full border border-foreground/15 px-5 py-2 data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:border-foreground gap-2"
             >
               <Grid3X3 className="w-4 h-4" />
               Webies
             </TabsTrigger>
-            <TabsTrigger 
-              value="saved" 
-              className="flex-1 max-w-[200px] rounded-none border-t-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent gap-2"
+            <TabsTrigger
+              value="saved"
+              className="rounded-full border border-foreground/15 px-5 py-2 data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:border-foreground gap-2"
             >
               <Bookmark className="w-4 h-4" />
               Saved
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="webies" className="mt-4">
+          <TabsContent value="webies" className="mt-8">
             {userWebies.length === 0 ? (
-              <div className="text-center py-16">
-                <Grid3X3 className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Webies Yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Share your first webie with the community
-                </p>
-                <Button onClick={() => navigate("/webie/create")}>
-                  Create Webie
-                </Button>
-              </div>
+              <EmptyState
+                icon={<Grid3X3 className="w-10 h-10" />}
+                title="No webies yet"
+                copy="Share your first quietly beautiful thing."
+                cta={
+                  <Button onClick={() => navigate("/webie/create")}>Create a webie</Button>
+                }
+              />
             ) : (
-              <div className="grid grid-cols-3 gap-1">
-                {userWebies.map((webie) => (
-                  <div 
-                    key={webie.id}
-                    className="aspect-square bg-muted overflow-hidden cursor-pointer group relative"
-                    onClick={() => navigate(`/webie/${webie.id}`)}
-                  >
-                    <img
-                      src={webie.thumbnail}
-                      alt={webie.title}
-                      className="w-full h-full object-cover group-hover:opacity-80 transition-opacity"
-                    />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <div className="text-white text-center text-sm">
-                        <p className="font-semibold">{webie.likes.length} likes</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <Mosaic items={userWebies} onClick={(id) => navigate(`/webie/${id}`)} />
             )}
           </TabsContent>
 
-          <TabsContent value="saved" className="mt-4">
+          <TabsContent value="saved" className="mt-8">
             {savedWebies.length === 0 ? (
-              <div className="text-center py-16">
-                <Bookmark className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Saved Webies</h3>
-                <p className="text-muted-foreground">
-                  Save webies you like to see them here
-                </p>
-              </div>
+              <EmptyState
+                icon={<Bookmark className="w-10 h-10" />}
+                title="Nothing saved"
+                copy="Tap the bookmark on any webie to keep it here."
+              />
             ) : (
-              <div className="grid grid-cols-3 gap-1">
-                {savedWebies.map((webie) => (
-                  <div 
-                    key={webie.id}
-                    className="aspect-square bg-muted overflow-hidden cursor-pointer group relative"
-                    onClick={() => navigate(`/webie/${webie.id}`)}
-                  >
-                    <img
-                      src={webie.thumbnail}
-                      alt={webie.title}
-                      className="w-full h-full object-cover group-hover:opacity-80 transition-opacity"
-                    />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <div className="text-white text-center text-sm">
-                        <p className="font-semibold">{webie.likes.length} likes</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <Mosaic items={savedWebies} onClick={(id) => navigate(`/webie/${id}`)} />
             )}
           </TabsContent>
         </Tabs>
       </div>
+    </div>
+  );
+}
+
+function EmptyState({
+  icon,
+  title,
+  copy,
+  cta,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  copy: string;
+  cta?: React.ReactNode;
+}) {
+  return (
+    <div className="border border-dashed border-foreground/15 rounded-2xl py-20 text-center bg-muted/20">
+      <div className="text-foreground/30 mx-auto mb-3 flex justify-center">{icon}</div>
+      <h3 className="font-display text-2xl font-light mb-1">
+        {title.split(" ")[0]} <span className="italic">{title.split(" ").slice(1).join(" ")}</span>
+      </h3>
+      <p className="text-sm text-foreground/55 mb-5">{copy}</p>
+      {cta}
+    </div>
+  );
+}
+
+function Mosaic({
+  items,
+  onClick,
+}: {
+  items: Webie[];
+  onClick: (id: string) => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+      {items.map((webie, idx) => (
+        <button
+          key={webie.id}
+          onClick={() => onClick(webie.id)}
+          className={`group relative overflow-hidden rounded-xl bg-muted border border-foreground/10 ${
+            idx % 7 === 0 ? "md:col-span-2 md:row-span-2 aspect-square" : "aspect-square"
+          }`}
+        >
+          <img
+            src={webie.thumbnail}
+            alt={webie.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
+            <span className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-background/80">
+              №{String(idx + 1).padStart(2, "0")}
+            </span>
+            <p className="font-display italic text-background text-lg line-clamp-2">
+              {webie.title}
+            </p>
+            <p className="font-mono-accent text-[10px] uppercase tracking-[0.2em] text-background/70 mt-1 flex items-center gap-1.5">
+              <Heart className="w-3 h-3" />
+              {webie.likes.length} likes
+            </p>
+          </div>
+        </button>
+      ))}
     </div>
   );
 }

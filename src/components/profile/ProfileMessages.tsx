@@ -423,12 +423,20 @@ const ProfileMessages = () => {
         "w-full md:w-80 border-r flex flex-col bg-card",
         selectedUser && "hidden md:flex"
       )}>
-        {/* Header */}
-        <div className="p-4 border-b">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold">Messages</h2>
-            <Button 
-              variant="ghost" 
+        {/* Editorial header */}
+        <div className="p-5 border-b border-foreground/10">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="w-6 h-px bg-foreground" />
+            <span className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/55">
+              Messages · No.03
+            </span>
+          </div>
+          <div className="flex items-end justify-between mb-4">
+            <h2 className="font-display text-3xl font-light leading-none">
+              Your <span className="italic">letters</span>
+            </h2>
+            <Button
+              variant={showUserList ? "outline" : "default"}
               size="sm"
               onClick={() => setShowUserList(!showUserList)}
             >
@@ -436,12 +444,12 @@ const ProfileMessages = () => {
             </Button>
           </div>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40" />
             <Input
-              placeholder="Search..."
+              placeholder="Search conversations…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-11"
             />
           </div>
         </div>

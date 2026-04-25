@@ -201,24 +201,31 @@ const ProfileBusiness = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 max-w-6xl">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Briefcase className="w-7 h-7 text-primary" />
-              Business Templates
-            </h1>
-            <p className="text-muted-foreground">
-              Deploy full-stack business applications with database, auth, and payments
-            </p>
+        {/* Editorial header */}
+        <div className="mb-10">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="w-10 h-px bg-foreground" />
+            <span className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/60">
+              Business · No.04
+            </span>
           </div>
-          <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-            <DialogTrigger asChild>
-              <Button>
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Business Template
-              </Button>
-            </DialogTrigger>
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            <div>
+              <h1 className="font-display text-5xl md:text-6xl font-light leading-[1.02] tracking-tight">
+                Ship <span className="italic">a backend</span>.
+              </h1>
+              <p className="mt-3 text-foreground/65 text-lg max-w-xl leading-[1.7]">
+                Deploy full-stack business applications with database,
+                auth, and payments — wired up in minutes.
+              </p>
+            </div>
+            <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+              <DialogTrigger asChild>
+                <Button size="lg">
+                  <Upload className="w-4 h-4" />
+                  Upload template
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-auto">
               <DialogHeader>
                 <DialogTitle>Upload Business Template</DialogTitle>
@@ -404,6 +411,7 @@ const ProfileBusiness = () => {
               )}
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {/* Business Templates List */}
