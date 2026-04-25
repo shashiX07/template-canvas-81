@@ -133,6 +133,7 @@ const Field = ({
 export default function FreelancerAuth() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [submitted, setSubmitted] = useState(false);
   const totalSteps = 6;
 
   // Step 1
@@ -295,8 +296,8 @@ export default function FreelancerAuth() {
     freelancerStorage.save(profile);
     userStorage.setCurrentUser(newUser);
 
+    setSubmitted(true);
     toast.success("Application submitted — pending review.");
-    navigate("/freelancer/dashboard");
   };
 
   const meta = STEPS[step - 1];
@@ -974,22 +975,52 @@ export default function FreelancerAuth() {
                       </div>
                     </div>
                   )}
+                  {/* ═══ SUBMITTED — confirmation overlay ═══ */}
+                  {submitted && (
+                    <div className="text-center py-6 space-y-5">
+                      <div className="mx-auto w-14 h-14 rounded-full bg-primary/15 flex items-center justify-center">
+                        <Check className="w-7 h-7 text-primary" />
+                      </div>
+                      <div className="font-display text-3xl">
+                        Thank you,{" "}
+                        <em className="italic font-light">
+                          {name.split(" ")[0] || "friend"}
+                        </em>
+                        .
+                      </div>
+                      <p className="text-muted-foreground max-w-md mx-auto">
+                        Your application is in. We'll be in touch by email
+                        within a few days. Meanwhile, your studio is ready —
+                        head in and start shaping your first templates.
+                      </p>
+                    </div>
+                  )}
                 </motion.div>
               </AnimatePresence>
 
               {/* ─── Nav buttons ─── */}
               <div className="mt-10 pt-6 border-t border-foreground/10 flex items-center justify-between gap-4">
-                <Button
-                  variant="ghost"
-                  onClick={() => setStep(step - 1)}
-                  disabled={step === 1}
-                  className="rounded-full px-5 h-11"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-1" />
-                  Back
-                </Button>
+                {!submitted && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => setStep(step - 1)}
+                    disabled={step === 1}
+                    className="rounded-full px-5 h-11"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-1" />
+                    Back
+                  </Button>
+                )}
 
-                {step < totalSteps ? (
+                {submitted ? (
+                  <Button
+                    onClick={() => navigate("/freelancer/dashboard")}
+                    className="ml-auto rounded-full bg-foreground text-background hover:bg-foreground/90 px-8 h-12 text-sm font-medium group"
+                  >
+                    Open the studio
+                    <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                ) : step < totalSteps ? (
                   <Button
                     onClick={handleNext}
                     className="rounded-full bg-foreground text-background hover:bg-foreground/90 px-8 h-12 text-sm font-medium group"

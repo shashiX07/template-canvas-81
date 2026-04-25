@@ -57,13 +57,19 @@ const Signup = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  // Track when the user has completed signup so we can let them see the
+  // "You're in" confirmation step instead of redirecting immediately.
+  const [signupComplete, setSignupComplete] = useState(false);
 
   const { signup, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isAuthenticated) navigate("/");
-  }, [isAuthenticated, navigate]);
+    // Only redirect away if the user is already authenticated when
+    // landing on this page (e.g. opened /signup in a new tab while
+    // logged in). Don't redirect during the in-flow signup completion.
+    if (isAuthenticated && !signupComplete) navigate("/");
+  }, [isAuthenticated, navigate, signupComplete]);
 
   const meta = STEPS[step - 1];
 
@@ -96,6 +102,7 @@ const Signup = () => {
         setError("Could not create account. That email may already be in use.");
         return;
       }
+      setSignupComplete(true);
       setStep(3);
     } else {
       navigate("/");
