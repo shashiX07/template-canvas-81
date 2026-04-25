@@ -411,6 +411,7 @@ const ProfileBusiness = () => {
               )}
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {/* Business Templates List */}
