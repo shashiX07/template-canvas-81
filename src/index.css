@@ -143,6 +143,12 @@
     --feed-accent: 48 100% 55%;
     --feed-accent-hover: 48 100% 65%;
     --feed-hover: 0 0% 15%;
+
+    /* Smoke / Ink — soft inverted palette (replaces hard black) — dark mode */
+    --smoke: 30 6% 14%;
+    --smoke-deep: 30 6% 10%;
+    --ink: 40 14% 92%;
+    --ink-soft: 40 10% 70%;
   }
 }
 
@@ -156,6 +162,15 @@
     font-family: 'Inter', system-ui, sans-serif;
     line-height: 1.7;
     font-feature-settings: "ss01", "cv11";
+  }
+
+  /* Hide scrollbar utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 
   h1, h2, h3, h4, h5 {
