@@ -170,7 +170,7 @@ export default function Index() {
                 <div className="mt-10 flex flex-col sm:flex-row gap-4">
                   <Button
                     onClick={() => navigate('/templates')}
-                    className="rounded-full bg-smoke text-ink hover:bg-foreground/90 px-8 h-14 text-base font-medium group"
+                    className="rounded-full bg-ink text-smoke hover:bg-ink/90 px-8 h-14 text-base font-medium group"
                   >
                     Start building
                     <ArrowUpRight className="ml-2 w-4 h-4 group-hover:rotate-45 transition-transform duration-300" />
