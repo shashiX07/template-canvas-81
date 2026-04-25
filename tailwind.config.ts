@@ -85,6 +85,14 @@ export default {
           "accent-hover": "hsl(var(--feed-accent-hover))",
           hover: "hsl(var(--feed-hover))",
         },
+        smoke: {
+          DEFAULT: "hsl(var(--smoke))",
+          deep: "hsl(var(--smoke-deep))",
+        },
+        ink: {
+          DEFAULT: "hsl(var(--ink))",
+          soft: "hsl(var(--ink-soft))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

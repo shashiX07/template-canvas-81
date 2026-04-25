@@ -40,6 +40,57 @@ const CATEGORIES = [
   { key: "Corporate", label: "Corporate", icon: Briefcase },
 ];
 
+/* ─── Card thumbnail with editorial fallback ─── */
+const CATEGORY_PALETTE: Record<string, [string, string]> = {
+  Birthday: ["from-pink-200", "to-amber-200"],
+  Wedding: ["from-rose-200", "to-yellow-100"],
+  Condolence: ["from-slate-200", "to-stone-100"],
+  Anniversary: ["from-amber-200", "to-orange-200"],
+  Corporate: ["from-yellow-200", "to-amber-100"],
+};
+
+const ThumbImage = ({
+  src,
+  alt,
+  category,
+}: {
+  src?: string;
+  alt: string;
+  category?: string;
+}) => {
+  const [errored, setErrored] = useState(false);
+  const showImg = src && !errored;
+  const [from, to] =
+    CATEGORY_PALETTE[category || ""] || ["from-primary/40", "to-muted"];
+  return (
+    <div className="absolute inset-0">
+      {showImg ? (
+        <img
+          src={src}
+          alt={alt}
+          loading="lazy"
+          onError={() => setErrored(true)}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+        />
+      ) : (
+        <div
+          className={`w-full h-full bg-gradient-to-br ${from} ${to} flex items-center justify-center relative overflow-hidden`}
+        >
+          <div className="absolute inset-0 opacity-50 [background:radial-gradient(circle_at_30%_20%,white,transparent_60%)]" />
+          <span className="relative font-display italic text-2xl md:text-3xl text-foreground/70 px-6 text-center line-clamp-3">
+            {alt}
+          </span>
+          {category && (
+            <span className="absolute bottom-3 right-4 font-mono-accent text-[9px] uppercase tracking-[0.25em] text-foreground/50">
+              {category}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const ProfileExplore = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -108,29 +159,35 @@ const ProfileExplore = () => {
   const featured = useMemo(() => templates.slice(0, 3), [templates]);
 
   return (
-    <div className="min-h-screen bg-feed">
-      {/* HERO HEADER */}
-      <section className="bg-feed-surface border-b border-feed-border">
-        <div className="max-w-[1200px] mx-auto px-6 py-8">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 rounded-lg bg-feed-accent/15 flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-feed-accent" />
-            </div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-feed-muted">
-              Discover
+    <div className="min-h-screen bg-background">
+      {/* HERO HEADER — editorial */}
+      <section className="relative bg-background border-b border-foreground/10 overflow-hidden">
+        <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full bg-primary/15 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -left-32 w-[400px] h-[400px] rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="relative max-w-[1200px] mx-auto px-6 py-14">
+          <div className="flex items-center gap-3 mb-5">
+            <span className="w-12 h-px bg-foreground" />
+            <span className="font-mono-accent text-xs uppercase tracking-[0.25em] text-foreground/70">
+              The library · Vol. 01
             </span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-feed-text">
-            Explore the Webie universe
+          <h1 className="font-display text-5xl md:text-7xl font-light leading-[1.02] tracking-tight">
+            Explore <span className="italic">the work</span>
+            <span className="relative inline-block ml-3">
+              <span className="absolute -inset-x-3 inset-y-2 bg-primary/85 -z-10 rounded-full" />
+              <span className="font-medium text-primary-foreground px-2 relative">others</span>
+            </span>
+            <span className="italic"> made.</span>
           </h1>
-          <p className="text-sm text-feed-muted mt-2 max-w-xl">
+          <p className="mt-6 text-foreground/70 text-lg leading-[1.7] max-w-xl">
             Browse beautifully crafted templates and meet the creators behind them.
+            Pick something close to your heart, then make it your own.
           </p>
 
           {/* Search + tabs */}
-          <div className="mt-6 flex flex-col md:flex-row md:items-center gap-3">
+          <div className="mt-10 flex flex-col md:flex-row md:items-center gap-3">
             <div className="relative flex-1 max-w-2xl">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-feed-muted" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40" />
               <Input
                 placeholder={
                   activeTab === "templates"
@@ -139,26 +196,26 @@ const ProfileExplore = () => {
                 }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-11 bg-feed-bg border-feed-border text-feed-text"
+                className="pl-11 h-12 rounded-full bg-background border-foreground/15 text-foreground focus-visible:ring-primary"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-feed-hover"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-foreground/5"
                 >
-                  <X className="w-4 h-4 text-feed-muted" />
+                  <X className="w-4 h-4 text-foreground/50" />
                 </button>
               )}
             </div>
 
             {/* Tab pill */}
-            <div className="inline-flex items-center bg-feed-bg border border-feed-border rounded-lg p-1 self-start md:self-auto">
+            <div className="inline-flex items-center bg-muted border border-foreground/10 rounded-full p-1 self-start md:self-auto">
               <button
                 onClick={() => setActiveTab("templates")}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-semibold rounded-md transition-colors ${
+                className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-full transition-colors ${
                   activeTab === "templates"
-                    ? "bg-feed-accent text-feed-text shadow-sm"
-                    : "text-feed-muted hover:text-feed-text"
+                    ? "bg-foreground text-background shadow-sm"
+                    : "text-foreground/60 hover:text-foreground"
                 }`}
               >
                 <FileText className="w-4 h-4" />
@@ -166,10 +223,10 @@ const ProfileExplore = () => {
               </button>
               <button
                 onClick={() => setActiveTab("users")}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-semibold rounded-md transition-colors ${
+                className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-full transition-colors ${
                   activeTab === "users"
-                    ? "bg-feed-accent text-feed-text shadow-sm"
-                    : "text-feed-muted hover:text-feed-text"
+                    ? "bg-foreground text-background shadow-sm"
+                    : "text-foreground/60 hover:text-foreground"
                 }`}
               >
                 <Users className="w-4 h-4" />
@@ -184,18 +241,18 @@ const ProfileExplore = () => {
       {activeTab === "templates" ? (
         <>
           {/* Category strip */}
-          <section className="border-b border-feed-border bg-feed-surface sticky top-0 z-10">
-            <div className="max-w-[1200px] mx-auto px-6 py-3 flex items-center gap-2 overflow-x-auto">
+          <section className="border-b border-foreground/10 bg-background/95 backdrop-blur-md sticky top-0 z-10">
+            <div className="max-w-[1200px] mx-auto px-6 py-3 flex items-center gap-2 overflow-x-auto scrollbar-hide">
               {CATEGORIES.map(({ key, label, icon: Icon }) => {
                 const active = selectedCategory === key;
                 return (
                   <button
                     key={key}
                     onClick={() => setSelectedCategory(key)}
-                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors shrink-0 ${
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border transition-all shrink-0 ${
                       active
-                        ? "bg-feed-accent text-feed-text border-feed-accent"
-                        : "bg-feed-bg text-feed-text border-feed-border hover:border-feed-accent"
+                        ? "bg-foreground text-background border-foreground"
+                        : "bg-background text-foreground border-foreground/15 hover:border-foreground/40"
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
@@ -204,7 +261,7 @@ const ProfileExplore = () => {
                 );
               })}
 
-              <div className="ml-auto inline-flex items-center bg-feed-bg border border-feed-border rounded-md p-0.5 shrink-0">
+              <div className="ml-auto inline-flex items-center bg-muted border border-foreground/10 rounded-full p-0.5 shrink-0">
                 {[
                   { key: "popular" as SortKey, label: "Popular", icon: TrendingUp },
                   { key: "rating" as SortKey, label: "Top rated", icon: Star },
@@ -213,10 +270,10 @@ const ProfileExplore = () => {
                   <button
                     key={key}
                     onClick={() => setSortBy(key)}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded transition-colors ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full transition-colors ${
                       sortBy === key
-                        ? "bg-feed-surface text-feed-accent shadow-sm"
-                        : "text-feed-muted hover:text-feed-text"
+                        ? "bg-foreground text-background shadow-sm"
+                        : "text-foreground/60 hover:text-foreground"
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
@@ -229,43 +286,50 @@ const ProfileExplore = () => {
 
           {/* Featured row */}
           {featured.length > 0 && selectedCategory === "all" && !searchQuery && (
-            <section className="max-w-[1200px] mx-auto px-6 pt-6">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-bold text-feed-text flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-feed-accent" />
-                  Trending now
-                </h2>
-                <span className="text-xs text-feed-muted">Top picks this week</span>
+            <section className="max-w-[1200px] mx-auto px-6 pt-10">
+              <div className="flex items-end justify-between mb-5">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="w-8 h-px bg-foreground" />
+                    <span className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/60">
+                      Trending · This week
+                    </span>
+                  </div>
+                  <h2 className="font-display text-3xl md:text-4xl font-light tracking-tight">
+                    Picks <span className="italic">we love</span>
+                  </h2>
+                </div>
+                <span className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/40 hidden md:inline">
+                  {featured.length} selected
+                </span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {featured.map((template, idx) => (
                   <Card
                     key={template.id}
-                    className="group overflow-hidden border border-feed-border bg-feed-surface hover:border-feed-accent transition-all cursor-pointer"
+                    className="group overflow-hidden border border-foreground/10 bg-background rounded-2xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 cursor-pointer"
                     onClick={() => navigate(`/template/${template.id}`)}
                   >
-                    <div className="relative aspect-[16/10] overflow-hidden bg-feed-bg">
-                      <img
-                        src={template.thumbnail}
-                        alt={template.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute top-2 left-2 inline-flex items-center gap-1 bg-feed-accent text-feed-text text-[11px] font-bold px-2 py-0.5 rounded-full">
-                        #{idx + 1}
-                      </div>
+                    <div className="relative aspect-[16/10] overflow-hidden bg-muted">
+                      <ThumbImage src={template.thumbnail} alt={template.title} category={template.category} />
+                      <span className="absolute top-3 left-3 inline-flex items-center gap-1 bg-primary text-primary-foreground text-[10px] font-bold px-2.5 py-1 rounded-full font-mono-accent uppercase tracking-wider">
+                        №{idx + 1}
+                      </span>
                       {template.isPremium && (
-                        <Badge className="absolute top-2 right-2 bg-feed-text text-feed-surface border-0 gap-1">
+                        <Badge className="absolute top-3 right-3 bg-foreground text-background border-0 gap-1 rounded-full">
                           <Crown className="w-3 h-3" />
                           Premium
                         </Badge>
                       )}
-                      <div className="absolute inset-x-0 bottom-0 p-3 bg-black/60">
-                        <h3 className="font-semibold text-white text-sm line-clamp-1">
+                      {/* gradient veil for legibility */}
+                      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-foreground/85 via-foreground/30 to-transparent" />
+                      <div className="absolute inset-x-0 bottom-0 p-4">
+                        <h3 className="font-display italic text-xl text-background line-clamp-1">
                           {template.title}
                         </h3>
-                        <div className="flex items-center gap-3 text-[11px] text-white/80 mt-0.5">
+                        <div className="flex items-center gap-3 text-[11px] text-background/80 mt-1 font-mono-accent uppercase tracking-wider">
                           <span className="flex items-center gap-1">
-                            <Star className="w-3 h-3 fill-feed-accent text-feed-accent" />
+                            <Star className="w-3 h-3 fill-primary text-primary" />
                             {template.rating}
                           </span>
                           <span className="flex items-center gap-1">
@@ -282,52 +346,62 @@ const ProfileExplore = () => {
           )}
 
           {/* Templates grid */}
-          <section className="max-w-[1200px] mx-auto px-6 py-6">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-feed-text">
-                {selectedCategory === "all" ? "All templates" : selectedCategory}
-              </h2>
-              <span className="text-xs text-feed-muted">{templates.length} templates</span>
+          <section className="max-w-[1200px] mx-auto px-6 py-12">
+            <div className="flex items-end justify-between mb-6">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="w-8 h-px bg-foreground" />
+                  <span className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/60">
+                    {selectedCategory === "all" ? "The Library" : "Category"}
+                  </span>
+                </div>
+                <h2 className="font-display text-3xl md:text-4xl font-light tracking-tight">
+                  {selectedCategory === "all" ? (
+                    <>All <span className="italic">templates</span></>
+                  ) : (
+                    <>{selectedCategory} <span className="italic">stories</span></>
+                  )}
+                </h2>
+              </div>
+              <span className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/40">
+                {templates.length} templates
+              </span>
             </div>
 
             {templates.length === 0 ? (
-              <div className="bg-feed-surface border border-feed-border rounded-lg py-16 text-center">
-                <FileText className="w-12 h-12 mx-auto text-feed-muted mb-3" />
-                <h3 className="text-base font-semibold text-feed-text mb-1">No templates found</h3>
-                <p className="text-sm text-feed-muted">Try adjusting your filters</p>
+              <div className="bg-muted/40 border border-dashed border-foreground/15 rounded-2xl py-20 text-center">
+                <FileText className="w-12 h-12 mx-auto text-foreground/30 mb-3" />
+                <h3 className="font-display text-2xl text-foreground mb-1">Nothing here yet</h3>
+                <p className="text-sm text-foreground/60">Try a different filter or search term</p>
               </div>
             ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                 {templates.map((template) => (
                   <Card
                     key={template.id}
-                    className="group overflow-hidden border border-feed-border bg-feed-surface hover:border-feed-accent hover:shadow-md transition-all"
+                    className="group overflow-hidden border border-foreground/10 bg-background rounded-2xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-500"
                   >
-                    <div className="relative aspect-[16/10] overflow-hidden bg-feed-bg">
-                      <img
-                        src={template.thumbnail}
-                        alt={template.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
+                    <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+                      <ThumbImage src={template.thumbnail} alt={template.title} category={template.category} />
                       {template.isPremium && (
-                        <Badge className="absolute top-2 right-2 bg-feed-text text-feed-surface border-0 gap-1 text-[10px]">
+                        <Badge className="absolute top-3 right-3 bg-foreground text-background border-0 gap-1 text-[10px] rounded-full">
                           <Crown className="w-3 h-3" />
                           Premium
                         </Badge>
                       )}
                       <Badge
                         variant="secondary"
-                        className="absolute top-2 left-2 bg-feed-surface/90 text-feed-text border-0 text-[10px] font-medium"
+                        className="absolute top-3 left-3 bg-background/95 text-foreground border-0 text-[10px] font-mono-accent uppercase tracking-wider rounded-full"
                       >
                         {template.category}
                       </Badge>
 
                       {/* Hover overlay */}
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <div className="absolute inset-0 bg-foreground/55 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                         <Button
                           size="sm"
                           variant="secondary"
-                          className="bg-white/95 hover:bg-white text-foreground rounded-full h-9"
+                          className="bg-background hover:bg-background/90 text-foreground rounded-full h-9"
                           onClick={() => navigate(`/template/${template.id}/preview`)}
                         >
                           <Eye className="w-4 h-4 mr-1" />
@@ -335,7 +409,7 @@ const ProfileExplore = () => {
                         </Button>
                         <Button
                           size="sm"
-                          className="bg-feed-accent hover:bg-feed-accent-hover text-feed-text rounded-full h-9 font-semibold"
+                          className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full h-9 font-semibold"
                           onClick={() => navigate(`/editor/${template.id}`)}
                         >
                           <Pencil className="w-4 h-4 mr-1" />
@@ -344,19 +418,19 @@ const ProfileExplore = () => {
                       </div>
                     </div>
 
-                    <CardContent className="p-3">
-                      <h3 className="font-semibold text-sm text-feed-text mb-1 line-clamp-1">
+                    <CardContent className="p-4">
+                      <h3 className="font-display text-lg text-foreground mb-1 line-clamp-1 leading-tight">
                         {template.title}
                       </h3>
-                      <p className="text-xs text-feed-muted line-clamp-2 mb-3 min-h-[2rem]">
+                      <p className="text-xs text-foreground/60 line-clamp-2 mb-4 min-h-[2rem] leading-relaxed">
                         {template.description}
                       </p>
-                      <div className="flex items-center justify-between text-xs text-feed-muted">
+                      <div className="flex items-center justify-between text-xs pt-3 border-t border-foreground/10">
                         <div className="flex items-center gap-1">
-                          <Star className="w-3.5 h-3.5 fill-feed-accent text-feed-accent" />
-                          <span className="font-semibold text-feed-text">{template.rating}</span>
+                          <Star className="w-3.5 h-3.5 fill-primary text-primary" />
+                          <span className="font-semibold text-foreground">{template.rating}</span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 text-foreground/60 font-mono-accent uppercase tracking-wider text-[10px]">
                           <Download className="w-3.5 h-3.5" />
                           <span>{template.downloads.toLocaleString()}</span>
                         </div>
@@ -370,22 +444,32 @@ const ProfileExplore = () => {
         </>
       ) : (
         // ==================== CREATORS VIEW ====================
-        <section className="max-w-[1200px] mx-auto px-6 py-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-feed-text">
-              {searchQuery ? "Search results" : "Discover creators"}
-            </h2>
-            <span className="text-xs text-feed-muted">{users.length} creators</span>
+        <section className="max-w-[1200px] mx-auto px-6 py-12">
+          <div className="flex items-end justify-between mb-6">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <span className="w-8 h-px bg-foreground" />
+                <span className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/60">
+                  Voices
+                </span>
+              </div>
+              <h2 className="font-display text-3xl md:text-4xl font-light tracking-tight">
+                {searchQuery ? <>Search <span className="italic">results</span></> : <>Discover <span className="italic">creators</span></>}
+              </h2>
+            </div>
+            <span className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/40">
+              {users.length} creators
+            </span>
           </div>
 
           {users.length === 0 ? (
-            <div className="bg-feed-surface border border-feed-border rounded-lg py-16 text-center">
-              <Users className="w-12 h-12 mx-auto text-feed-muted mb-3" />
-              <h3 className="text-base font-semibold text-feed-text mb-1">No creators found</h3>
-              <p className="text-sm text-feed-muted">Try a different search</p>
+            <div className="bg-muted/40 border border-dashed border-foreground/15 rounded-2xl py-20 text-center">
+              <Users className="w-12 h-12 mx-auto text-foreground/30 mb-3" />
+              <h3 className="font-display text-2xl text-foreground mb-1">No creators found</h3>
+              <p className="text-sm text-foreground/60">Try a different search</p>
             </div>
           ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {users.map((user) => {
                 const isFollowing = currentUser
                   ? followStorage.isFollowing(currentUser.id, user.id)
@@ -396,29 +480,31 @@ const ProfileExplore = () => {
                 return (
                   <Card
                     key={user.id}
-                    className="overflow-hidden border border-feed-border bg-feed-surface hover:border-feed-accent transition-all"
+                    className="overflow-hidden border border-foreground/10 bg-background rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-500"
                   >
                     {/* Banner */}
-                    <div className="h-16 bg-primary/20" />
-                    <CardContent className="p-4 -mt-8">
+                    <div className="h-20 bg-gradient-to-br from-primary/40 via-primary/20 to-muted relative overflow-hidden">
+                      <div className="absolute inset-0 opacity-30 mix-blend-overlay [background:radial-gradient(circle_at_30%_50%,hsl(var(--primary))_0%,transparent_60%)]" />
+                    </div>
+                    <CardContent className="p-4 -mt-10">
                       <Avatar
-                        className="h-16 w-16 border-4 border-feed-surface cursor-pointer mb-2"
+                        className="h-20 w-20 border-4 border-background cursor-pointer mb-3 shadow-md"
                         onClick={() => navigate(`/profile/user/${user.id}`)}
                       >
                         <AvatarImage src={user.avatar} />
-                        <AvatarFallback className="bg-feed-accent/20 text-feed-text text-lg font-semibold">
+                        <AvatarFallback className="bg-primary/20 text-foreground text-lg font-display">
                           {user.name.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
                           <h3
-                            className="font-semibold text-base text-feed-text truncate cursor-pointer hover:text-feed-accent"
+                            className="font-display text-lg text-foreground truncate cursor-pointer hover:italic"
                             onClick={() => navigate(`/profile/user/${user.id}`)}
                           >
                             {user.name}
                           </h3>
-                          <p className="text-xs text-feed-muted truncate">{user.email}</p>
+                          <p className="text-xs text-foreground/50 truncate font-mono-accent">{user.email}</p>
                         </div>
                         {currentUser && currentUser.id !== user.id && (
                           <Button
@@ -427,8 +513,8 @@ const ProfileExplore = () => {
                             onClick={() => handleFollow(user.id)}
                             className={`shrink-0 h-8 rounded-full text-xs font-semibold ${
                               isFollowing
-                                ? "border-feed-border text-feed-muted hover:bg-feed-hover"
-                                : "bg-feed-accent hover:bg-feed-accent-hover text-feed-text"
+                                ? "border-foreground/20 text-foreground/60 hover:bg-muted"
+                                : "bg-foreground hover:bg-foreground/90 text-background"
                             }`}
                           >
                             {isFollowing ? (
@@ -446,20 +532,20 @@ const ProfileExplore = () => {
                         )}
                       </div>
 
-                      <div className="flex items-center gap-4 mt-3 pt-3 border-t border-feed-border text-xs">
+                      <div className="flex items-center gap-5 mt-4 pt-4 border-t border-foreground/10 text-xs">
                         <div>
-                          <p className="font-bold text-feed-text">{followerCount}</p>
-                          <p className="text-feed-muted">Followers</p>
+                          <p className="font-display text-xl text-foreground leading-none">{followerCount}</p>
+                          <p className="text-foreground/50 font-mono-accent uppercase tracking-wider text-[10px] mt-1">Followers</p>
                         </div>
                         <div>
-                          <p className="font-bold text-feed-text">{followingCount}</p>
-                          <p className="text-feed-muted">Following</p>
+                          <p className="font-display text-xl text-foreground leading-none">{followingCount}</p>
+                          <p className="text-foreground/50 font-mono-accent uppercase tracking-wider text-[10px] mt-1">Following</p>
                         </div>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => navigate(`/profile/user/${user.id}`)}
-                          className="ml-auto h-7 text-xs text-feed-muted hover:text-feed-accent hover:bg-feed-hover"
+                          className="ml-auto h-7 text-xs text-foreground/60 hover:text-foreground hover:bg-muted"
                         >
                           View profile →
                         </Button>

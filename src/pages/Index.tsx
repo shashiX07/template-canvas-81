@@ -170,7 +170,7 @@ export default function Index() {
                 <div className="mt-10 flex flex-col sm:flex-row gap-4">
                   <Button
                     onClick={() => navigate('/templates')}
-                    className="rounded-full bg-foreground text-background hover:bg-foreground/90 px-8 h-14 text-base font-medium group"
+                    className="rounded-full bg-ink text-smoke hover:bg-ink/90 px-8 h-14 text-base font-medium group"
                   >
                     Start building
                     <ArrowUpRight className="ml-2 w-4 h-4 group-hover:rotate-45 transition-transform duration-300" />
@@ -258,7 +258,7 @@ export default function Index() {
       </section>
 
       {/* ═══ MARQUEE ═══ */}
-      <section className="border-y border-foreground/10 py-8 overflow-hidden bg-foreground text-background">
+      <section className="border-y border-foreground/10 py-8 overflow-hidden bg-smoke text-ink">
         <motion.div
           className="flex gap-16 whitespace-nowrap"
           animate={{ x: ["0%", "-50%"] }}
@@ -300,11 +300,11 @@ export default function Index() {
       </section>
 
       {/* ═══ WORK / SHOWCASE ═══ */}
-      <section id="work" ref={marqueeRef} className="py-32 bg-foreground text-background overflow-hidden">
+      <section id="work" ref={marqueeRef} className="py-32 bg-smoke text-ink overflow-hidden">
         <div className="container px-6 md:px-10 mb-20">
           <Reveal>
             <div className="flex items-center gap-3 mb-6">
-              <span className="w-12 h-px bg-background" />
+              <span className="w-12 h-px bg-ink" />
               <span className="font-mono-accent text-xs uppercase tracking-[0.25em]">Selected work</span>
             </div>
           </Reveal>
@@ -318,7 +318,7 @@ export default function Index() {
         <motion.div style={{ x: galleryX }} className="flex gap-8 px-10">
           {[...showcase, ...showcase].map((item, i) => (
             <div key={i} className="shrink-0 w-[420px] md:w-[520px] group cursor-pointer">
-              <div className="overflow-hidden rounded-3xl bg-background/5 aspect-[4/5]">
+              <div className="overflow-hidden rounded-3xl bg-ink/5 aspect-[4/5]">
                 <motion.img
                   src={item.img}
                   alt={item.label}
@@ -330,7 +330,7 @@ export default function Index() {
               <div className="flex justify-between items-end mt-5">
                 <div>
                   <div className="font-display text-2xl">{item.label}</div>
-                  <div className="font-mono-accent text-xs uppercase tracking-[0.25em] text-background/60 mt-1">
+                  <div className="font-mono-accent text-xs uppercase tracking-[0.25em] text-ink-soft mt-1">
                     {item.category}
                   </div>
                 </div>
@@ -463,11 +463,11 @@ export default function Index() {
       </section>
 
       {/* ═══ IN MOTION / DRIFTING GALLERY ═══ */}
-      <section className="py-24 md:py-32 bg-foreground text-background overflow-hidden border-y border-foreground/20">
+      <section className="py-24 md:py-32 bg-smoke text-ink overflow-hidden border-y border-foreground/20">
         <div className="container px-6 md:px-10 mb-16 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
           <Reveal>
             <div className="flex items-center gap-3 mb-4">
-              <span className="w-12 h-px bg-background" />
+              <span className="w-12 h-px bg-ink" />
               <span className="font-mono-accent text-xs uppercase tracking-[0.25em]">In motion</span>
             </div>
             <h2 className="font-display text-4xl md:text-6xl font-light leading-[1.05] max-w-2xl">
@@ -475,7 +475,7 @@ export default function Index() {
             </h2>
           </Reveal>
           <Reveal delay={0.1}>
-            <p className="font-mono-accent text-xs uppercase tracking-[0.25em] text-background/60 max-w-xs">
+            <p className="font-mono-accent text-xs uppercase tracking-[0.25em] text-ink-soft max-w-xs">
               Hover to slow time
             </p>
           </Reveal>
@@ -504,7 +504,7 @@ export default function Index() {
               { img: heroCollage4, t: "Hands at work", n: "VI." },
             ].map((it, i) => (
               <div key={i} className="shrink-0 w-[260px] md:w-[320px]">
-                <div className="overflow-hidden rounded-2xl aspect-[3/4] bg-background/5">
+                <div className="overflow-hidden rounded-2xl aspect-[3/4] bg-ink/5">
                   <motion.img
                     src={it.img}
                     alt={it.t}
@@ -514,9 +514,9 @@ export default function Index() {
                     transition={{ duration: 0.8 }}
                   />
                 </div>
-                <div className="mt-4 flex items-baseline justify-between gap-3 font-mono-accent text-[10px] uppercase tracking-[0.25em] text-background/60">
+                <div className="mt-4 flex items-baseline justify-between gap-3 font-mono-accent text-[10px] uppercase tracking-[0.25em] text-ink-soft">
                   <span>{it.n}</span>
-                  <span className="font-display italic text-base text-background normal-case tracking-normal">{it.t}</span>
+                  <span className="font-display italic text-base text-ink normal-case tracking-normal">{it.t}</span>
                 </div>
               </div>
             ))}
@@ -695,10 +695,10 @@ export default function Index() {
       </section>
 
       {/* ═══ CTA ═══ */}
-      <section className="py-40 bg-foreground text-background overflow-hidden relative">
+      <section className="py-40 bg-smoke text-ink overflow-hidden relative">
         <div className="container px-6 md:px-10 text-center relative z-10">
           <Reveal>
-            <span className="font-mono-accent text-xs uppercase tracking-[0.25em] text-background/60">
+            <span className="font-mono-accent text-xs uppercase tracking-[0.25em] text-ink-soft">
               Now or later
             </span>
           </Reveal>
@@ -719,7 +719,7 @@ export default function Index() {
             </Button>
           </Reveal>
           <Reveal delay={0.4}>
-            <div className="mt-8 font-mono-accent text-xs uppercase tracking-[0.25em] text-background/50 flex items-center gap-2 justify-center">
+            <div className="mt-8 font-mono-accent text-xs uppercase tracking-[0.25em] text-ink-soft flex items-center gap-2 justify-center">
               <Check className="w-3 h-3" /> No credit card · Free forever plan
             </div>
           </Reveal>

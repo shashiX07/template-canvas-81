@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Search,
   Heart,
@@ -243,7 +242,7 @@ const ProfileHome = () => {
 
               {/* Tag chips row */}
               {allTags.length > 0 && (
-                <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-feed-border overflow-x-auto pb-0.5">
+                <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-feed-border overflow-x-auto pb-0.5 scrollbar-hide">
                   <Filter className="w-3.5 h-3.5 text-feed-muted shrink-0" />
                   {allTags.slice(0, 12).map(([tag, count]) => {
                     const active = selectedTags.includes(tag);
@@ -445,9 +444,8 @@ const ProfileHome = () => {
           </main>
 
           {/* ============ RIGHT — Suggestions ============ */}
-          <aside className="hidden lg:block sticky top-6 self-start max-h-[calc(100vh-3rem)]">
-            <ScrollArea className="h-[calc(100vh-3rem)] pr-2">
-              <div className="space-y-3">
+          <aside className="hidden lg:block self-start sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto scrollbar-hide">
+            <div className="space-y-3">
                 {!currentUser ? (
                   <>
                     <div className="bg-feed-surface border border-feed-border rounded-lg p-5 text-center">
@@ -543,8 +541,7 @@ const ProfileHome = () => {
                 <p className="text-[11px] text-feed-muted px-2 leading-relaxed">
                   Webie · About · Help · Privacy · Terms
                 </p>
-              </div>
-            </ScrollArea>
+            </div>
           </aside>
         </div>
       </div>
