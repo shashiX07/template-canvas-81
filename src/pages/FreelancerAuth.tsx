@@ -133,6 +133,7 @@ const Field = ({
 export default function FreelancerAuth() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [submitted, setSubmitted] = useState(false);
   const totalSteps = 6;
 
   // Step 1
