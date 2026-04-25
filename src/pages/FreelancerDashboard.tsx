@@ -19,11 +19,10 @@ import FreelancerCodeEditor from '@/components/freelancer/FreelancerCodeEditor';
 import { toast } from 'sonner';
 import { FileText, Code, Upload, BarChart3, DollarSign, CreditCard, User, Settings } from 'lucide-react';
 
-// Dashboard Overview Component
+// Dashboard Overview Component — header now lives inside FreelancerOverview
 function DashboardContent({ profile }: { profile: FreelancerProfileType }) {
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Dashboard Overview</h1>
+    <div className="container mx-auto px-6 md:px-10 py-10">
       <FreelancerOverview profile={profile} />
     </div>
   );
