@@ -40,6 +40,57 @@ const CATEGORIES = [
   { key: "Corporate", label: "Corporate", icon: Briefcase },
 ];
 
+/* ─── Card thumbnail with editorial fallback ─── */
+const CATEGORY_PALETTE: Record<string, [string, string]> = {
+  Birthday: ["from-pink-200", "to-amber-200"],
+  Wedding: ["from-rose-200", "to-yellow-100"],
+  Condolence: ["from-slate-200", "to-stone-100"],
+  Anniversary: ["from-amber-200", "to-orange-200"],
+  Corporate: ["from-yellow-200", "to-amber-100"],
+};
+
+const ThumbImage = ({
+  src,
+  alt,
+  category,
+}: {
+  src?: string;
+  alt: string;
+  category?: string;
+}) => {
+  const [errored, setErrored] = useState(false);
+  const showImg = src && !errored;
+  const [from, to] =
+    CATEGORY_PALETTE[category || ""] || ["from-primary/40", "to-muted"];
+  return (
+    <div className="absolute inset-0">
+      {showImg ? (
+        <img
+          src={src}
+          alt={alt}
+          loading="lazy"
+          onError={() => setErrored(true)}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+        />
+      ) : (
+        <div
+          className={`w-full h-full bg-gradient-to-br ${from} ${to} flex items-center justify-center relative overflow-hidden`}
+        >
+          <div className="absolute inset-0 opacity-50 [background:radial-gradient(circle_at_30%_20%,white,transparent_60%)]" />
+          <span className="relative font-display italic text-2xl md:text-3xl text-foreground/70 px-6 text-center line-clamp-3">
+            {alt}
+          </span>
+          {category && (
+            <span className="absolute bottom-3 right-4 font-mono-accent text-[9px] uppercase tracking-[0.25em] text-foreground/50">
+              {category}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const ProfileExplore = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
