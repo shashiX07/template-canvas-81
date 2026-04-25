@@ -463,6 +463,89 @@ export default function Index() {
         </div>
       </section>
 
+      {/* ═══ FOR MAKERS — small freelancer band ═══ */}
+      <section className="border-t border-foreground/10 py-24 md:py-32 relative overflow-hidden">
+        <div className="absolute -top-20 right-0 w-[400px] h-[400px] rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="container px-6 md:px-10">
+          <div className="grid md:grid-cols-12 gap-10 md:gap-16 items-center">
+            {/* image */}
+            <Reveal className="md:col-span-5">
+              <div className="relative">
+                <motion.div
+                  initial={{ rotate: 2 }}
+                  whileHover={{ rotate: 0, scale: 1.01 }}
+                  transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  className="overflow-hidden rounded-3xl shadow-2xl ring-1 ring-foreground/10 aspect-[4/5]"
+                >
+                  <img
+                    src={freelancerPortrait}
+                    alt="A designer at her desk"
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                  />
+                </motion.div>
+
+                {/* tag */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.8, delay: 0.3 }}
+                  className="absolute -bottom-5 -left-4 md:-left-8 bg-background border border-foreground/10 rounded-2xl px-5 py-3 shadow-xl"
+                >
+                  <div className="font-mono-accent text-[10px] uppercase tracking-[0.2em] text-foreground/50">
+                    Now accepting
+                  </div>
+                  <div className="font-display italic text-lg mt-0.5">
+                    Designers & makers
+                  </div>
+                </motion.div>
+              </div>
+            </Reveal>
+
+            {/* copy */}
+            <div className="md:col-span-6 md:col-start-7">
+              <Reveal>
+                <div className="flex items-center gap-3 mb-6">
+                  <span className="w-12 h-px bg-foreground" />
+                  <span className="font-mono-accent text-xs uppercase tracking-[0.25em] text-foreground/70">
+                    For the makers
+                  </span>
+                </div>
+              </Reveal>
+
+              <Reveal delay={0.1}>
+                <h2 className="font-display text-4xl md:text-6xl font-light leading-[1.05] tracking-tight">
+                  Are you the one <span className="italic">making</span>
+                  <br />the templates?
+                </h2>
+              </Reveal>
+
+              <Reveal delay={0.2}>
+                <p className="mt-8 text-foreground/70 text-lg leading-[1.9] max-w-md">
+                  Join a small studio of designers shaping how the next million sites look. Submit work you're proud of, set your own rate, get paid when people use it.
+                </p>
+              </Reveal>
+
+              <Reveal delay={0.3}>
+                <div className="mt-10 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                  <Button
+                    onClick={() => navigate('/freelancer/auth')}
+                    className="rounded-full bg-foreground text-background hover:bg-foreground/90 px-8 h-14 text-base font-medium group"
+                  >
+                    Apply as a freelancer
+                    <ArrowUpRight className="ml-2 w-4 h-4 group-hover:rotate-45 transition-transform duration-300" />
+                  </Button>
+                  <span className="font-mono-accent text-[11px] uppercase tracking-[0.25em] text-foreground/50">
+                    · Reviewed in 2–3 days
+                  </span>
+                </div>
+              </Reveal>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ═══ IN MOTION / DRIFTING GALLERY ═══ */}
       <section className="py-24 md:py-32 bg-smoke text-ink overflow-hidden border-y border-foreground/20">
         <div className="container px-6 md:px-10 mb-16 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
