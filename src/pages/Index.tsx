@@ -304,7 +304,7 @@ export default function Index() {
         <div className="container px-6 md:px-10 mb-20">
           <Reveal>
             <div className="flex items-center gap-3 mb-6">
-              <span className="w-12 h-px bg-background" />
+              <span className="w-12 h-px bg-ink" />
               <span className="font-mono-accent text-xs uppercase tracking-[0.25em]">Selected work</span>
             </div>
           </Reveal>
