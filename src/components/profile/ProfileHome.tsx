@@ -243,7 +243,7 @@ const ProfileHome = () => {
 
               {/* Tag chips row */}
               {allTags.length > 0 && (
-                <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-feed-border overflow-x-auto pb-0.5">
+                <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-feed-border overflow-x-auto pb-0.5 scrollbar-hide">
                   <Filter className="w-3.5 h-3.5 text-feed-muted shrink-0" />
                   {allTags.slice(0, 12).map(([tag, count]) => {
                     const active = selectedTags.includes(tag);
