@@ -114,6 +114,22 @@ const STEPS = [
   },
 ];
 
+/* ─── Reusable field with floating icon (module scope to keep input focus) ─── */
+const Field = ({
+  icon: Icon,
+  children,
+}: {
+  icon?: any;
+  children: React.ReactNode;
+}) => (
+  <div className="relative">
+    {Icon && (
+      <Icon className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40 pointer-events-none z-10" />
+    )}
+    <div className={Icon ? "[&>input]:pl-12" : ""}>{children}</div>
+  </div>
+);
+
 export default function FreelancerAuth() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
