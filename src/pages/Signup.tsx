@@ -68,7 +68,7 @@ const Signup = () => {
     // Only redirect away if the user is already authenticated when
     // landing on this page (e.g. opened /signup in a new tab while
     // logged in). Don't redirect during the in-flow signup completion.
-    if (isAuthenticated && !signupComplete) navigate("/");
+    if (isAuthenticated && !signupComplete) navigate("/profile");
   }, [isAuthenticated, navigate, signupComplete]);
 
   const meta = STEPS[step - 1];
@@ -105,7 +105,7 @@ const Signup = () => {
       setSignupComplete(true);
       setStep(3);
     } else {
-      navigate("/");
+      navigate("/profile");
     }
   };
 
