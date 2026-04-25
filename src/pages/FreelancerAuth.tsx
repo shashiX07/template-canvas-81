@@ -296,8 +296,8 @@ export default function FreelancerAuth() {
     freelancerStorage.save(profile);
     userStorage.setCurrentUser(newUser);
 
+    setSubmitted(true);
     toast.success("Application submitted — pending review.");
-    navigate("/freelancer/dashboard");
   };
 
   const meta = STEPS[step - 1];
