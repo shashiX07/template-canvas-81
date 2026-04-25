@@ -178,7 +178,7 @@ export default function FreelancerDashboard() {
   }
 
   return (
-    <div className="dark dashboard-shell">
+    <div className="dashboard-shell">
       <SidebarProvider>
         <div className="flex min-h-screen w-full bg-background text-foreground">
           <FreelancerSidebar />
