@@ -102,6 +102,7 @@ const Signup = () => {
         setError("Could not create account. That email may already be in use.");
         return;
       }
+      setSignupComplete(true);
       setStep(3);
     } else {
       navigate("/");
