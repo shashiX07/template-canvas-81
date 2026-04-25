@@ -12,6 +12,8 @@ import TemplateDetail from "./pages/TemplateDetail";
 import TemplatePreview from "./pages/TemplatePreview";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
 import EditorPage from "./pages/Editor";
 import AdminPage from "./pages/Admin";
@@ -34,7 +36,9 @@ const App = () => (
           <AuthProvider>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
+              <Route path="/auth" element={<Login />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
               <Route path="/freelancer/auth" element={<FreelancerAuth />} />
               <Route path="/templates" element={<Templates />} />
               <Route path="/template/:id" element={<TemplateDetail />} />
