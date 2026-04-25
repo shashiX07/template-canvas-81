@@ -4,14 +4,16 @@ import { ProfileContent } from "@/components/profile/ProfileContent";
 
 const Profile = () => {
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <ProfileSidebar />
-        <main className="flex-1 bg-background overflow-auto">
-          <ProfileContent />
-        </main>
-      </div>
-    </SidebarProvider>
+    <div className="dark dashboard-shell">
+      <SidebarProvider>
+        <div className="flex min-h-screen w-full bg-background text-foreground">
+          <ProfileSidebar />
+          <main className="flex-1 bg-background overflow-auto">
+            <ProfileContent />
+          </main>
+        </div>
+      </SidebarProvider>
+    </div>
   );
 };
 

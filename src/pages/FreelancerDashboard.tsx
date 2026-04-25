@@ -178,19 +178,21 @@ export default function FreelancerDashboard() {
   }
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <FreelancerSidebar />
-        <main className="flex-1 bg-background overflow-auto">
-          <Routes>
-            <Route path="/" element={<DashboardContent profile={profile} />} />
-            <Route path="/templates" element={<TemplatesSection userId={user.id} />} />
-            <Route path="/monetization" element={<MonetizationSection userId={user.id} profile={profile} />} />
-            <Route path="/reviews" element={<ReviewsSection userId={user.id} />} />
-            <Route path="/account" element={<AccountSection userId={user.id} />} />
-          </Routes>
-        </main>
-      </div>
-    </SidebarProvider>
+    <div className="dark dashboard-shell">
+      <SidebarProvider>
+        <div className="flex min-h-screen w-full bg-background text-foreground">
+          <FreelancerSidebar />
+          <main className="flex-1 bg-background overflow-auto">
+            <Routes>
+              <Route path="/" element={<DashboardContent profile={profile} />} />
+              <Route path="/templates" element={<TemplatesSection userId={user.id} />} />
+              <Route path="/monetization" element={<MonetizationSection userId={user.id} profile={profile} />} />
+              <Route path="/reviews" element={<ReviewsSection userId={user.id} />} />
+              <Route path="/account" element={<AccountSection userId={user.id} />} />
+            </Routes>
+          </main>
+        </div>
+      </SidebarProvider>
+    </div>
   );
 }
