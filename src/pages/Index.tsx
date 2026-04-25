@@ -19,6 +19,7 @@ import heroPortrait from "@/assets/hero-portrait.jpg";
 import letterStill from "@/assets/letter-still.jpg";
 import handsPolaroid from "@/assets/hands-polaroid.jpg";
 import windowLight from "@/assets/window-light.jpg";
+import freelancerPortrait from "@/assets/freelancer-portrait.jpg";
 
 /* ─── Motion primitives ───────────────────────────── */
 
