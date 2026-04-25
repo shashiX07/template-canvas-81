@@ -499,21 +499,23 @@ const Admin = () => {
   }
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <AdminSidebar />
-        <main className="flex-1 bg-background overflow-auto">
-          <Routes>
-            <Route path="/" element={<AdminDashboard />} />
-            <Route path="/freelancers" element={<FreelancersPage />} />
-            <Route path="/templates" element={<TemplatesPage />} />
-            <Route path="/elements" element={<ElementsPage />} />
-            <Route path="/activity" element={<ActivityPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-          </Routes>
-        </main>
-      </div>
-    </SidebarProvider>
+    <div className="dark dashboard-shell">
+      <SidebarProvider>
+        <div className="flex min-h-screen w-full bg-background text-foreground">
+          <AdminSidebar />
+          <main className="flex-1 bg-background overflow-auto">
+            <Routes>
+              <Route path="/" element={<AdminDashboard />} />
+              <Route path="/freelancers" element={<FreelancersPage />} />
+              <Route path="/templates" element={<TemplatesPage />} />
+              <Route path="/elements" element={<ElementsPage />} />
+              <Route path="/activity" element={<ActivityPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+            </Routes>
+          </main>
+        </div>
+      </SidebarProvider>
+    </div>
   );
 };
 
