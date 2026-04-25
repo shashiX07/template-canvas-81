@@ -16,7 +16,7 @@ import { FreelancerActivity } from "@/components/admin/FreelancerActivity";
 import { CustomElementEditor } from "@/components/admin/CustomElementEditor";
 import { toast } from "sonner";
 
-// Dashboard Overview
+// Dashboard Overview — editorial layout matching auth/landing pages
 function AdminDashboard() {
   const navigate = useNavigate();
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -65,109 +65,204 @@ function AdminDashboard() {
   const privateTemplates = templates.length - publicTemplates;
   const totalDownloads = templates.reduce((sum, t) => sum + t.downloads, 0);
   const adminUsers = users.filter(u => u.isAdmin || u.isSuperAdmin).length;
+  const avgRating = templates.length > 0
+    ? (templates.reduce((sum, t) => sum + t.rating, 0) / templates.length).toFixed(1)
+    : '0.0';
+
+  const stats = [
+    { no: "01", label: "Templates", value: String(templates.length), sub: `${publicTemplates} public · ${privateTemplates} private`, icon: FileText },
+    { no: "02", label: "Members", value: String(users.length), sub: `${adminUsers} with admin access`, icon: Users },
+    { no: "03", label: "Downloads", value: totalDownloads.toLocaleString(), sub: "Across all templates", icon: BarChart3 },
+    { no: "04", label: "Avg rating", value: avgRating, sub: "Out of 5 stars", icon: BarChart3 },
+  ];
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard Overview</h1>
-        <p className="text-muted-foreground">Manage templates, users, and analytics</p>
+    <div className="min-h-screen bg-background">
+      {/* Background ambience */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute bottom-0 -right-40 w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl" />
       </div>
 
-      {/* Stats */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Templates</CardTitle>
-            <FileText className="w-4 h-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{templates.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {publicTemplates} public, {privateTemplates} private
-            </p>
-          </CardContent>
-        </Card>
+      <div className="relative max-w-[1200px] mx-auto px-6 md:px-10 py-10 space-y-10">
+        {/* Editorial header */}
+        <header>
+          <div className="flex items-center gap-3 mb-6">
+            <span className="w-12 h-px bg-foreground" />
+            <span className="font-mono-accent text-[11px] uppercase tracking-[0.25em] text-foreground/70">
+              Admin desk · Vol. 01 · Today
+            </span>
+          </div>
+          <h1 className="font-display text-5xl md:text-6xl font-light leading-[1.02] tracking-tight">
+            The <span className="italic">control</span> room.
+          </h1>
+          <p className="mt-5 max-w-xl text-foreground/65 text-lg leading-[1.7]">
+            Templates, members, downloads — the studio's quiet pulse, gathered in one place.
+          </p>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="w-4 h-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{users.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">{adminUsers} admins</p>
-          </CardContent>
-        </Card>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Button onClick={() => navigate("/admin/upload")} size="lg" className="group">
+              <Upload className="w-4 h-4 mr-2" />
+              Upload a template
+            </Button>
+            <Button variant="outline" size="lg" onClick={() => setShowUserDialog(true)}>
+              <UserPlus className="w-4 h-4 mr-2" />
+              Add a member
+            </Button>
+          </div>
+        </header>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Downloads</CardTitle>
-            <BarChart3 className="w-4 h-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalDownloads}</div>
-            <p className="text-xs text-muted-foreground mt-1">Across all templates</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Avg Rating</CardTitle>
-            <BarChart3 className="w-4 h-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {templates.length > 0 ? (templates.reduce((sum, t) => sum + t.rating, 0) / templates.length).toFixed(1) : '0'}
+        {/* Stats — editorial grid */}
+        <section>
+          <div className="flex items-end justify-between mb-5">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <span className="w-6 h-px bg-foreground" />
+                <span className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/60">
+                  Numbers · This week
+                </span>
+              </div>
+              <h2 className="font-display text-3xl font-light tracking-tight">
+                A <span className="italic">quiet</span> snapshot.
+              </h2>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Overall rating</p>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
 
-      {/* Actions */}
-      <div className="flex gap-3">
-        <Button onClick={() => navigate("/admin/upload")}>
-          <Upload className="w-4 h-4 mr-2" />
-          Upload Template
-        </Button>
-        <Button variant="outline" onClick={() => setShowUserDialog(true)}>
-          <UserPlus className="w-4 h-4 mr-2" />
-          Add User
-        </Button>
-      </div>
-
-      {/* Users Quick View */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Users</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {users.slice(0, 5).map((user) => (
-              <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div>
-                  <h4 className="font-medium">{user.name}</h4>
-                  <p className="text-sm text-muted-foreground">{user.email}</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {stats.map((stat) => (
+              <div
+                key={stat.no}
+                className="group relative border border-foreground/10 rounded-2xl p-6 bg-background hover:border-foreground/30 hover:shadow-xl transition-all"
+              >
+                <div className="flex items-start justify-between mb-6">
+                  <span className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/50">
+                    №{stat.no} · {stat.label}
+                  </span>
+                  <stat.icon className="w-4 h-4 text-foreground/40 group-hover:text-foreground transition-colors" />
                 </div>
-                <div className="flex gap-2">
-                  {user.isSuperAdmin && <Badge>Super Admin</Badge>}
-                  {user.isAdmin && !user.isSuperAdmin && <Badge variant="secondary">Admin</Badge>}
+                <div className="font-display text-5xl font-light tracking-tight leading-none">
+                  {stat.value}
                 </div>
+                <p className="mt-3 text-xs text-foreground/55 leading-relaxed">
+                  {stat.sub}
+                </p>
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </section>
+
+        {/* Two-column: recent members + quick links */}
+        <section className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 border border-foreground/10 rounded-2xl bg-background overflow-hidden">
+            <div className="px-6 py-5 border-b border-foreground/10 flex items-center justify-between">
+              <div>
+                <span className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/50">
+                  Chapter 03 · Recent
+                </span>
+                <h3 className="font-display text-2xl font-light mt-1">
+                  New <span className="italic">faces</span>.
+                </h3>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/admin/freelancers")}>
+                See all
+              </Button>
+            </div>
+            <div className="divide-y divide-foreground/10">
+              {users.slice(0, 5).map((user, i) => (
+                <div key={user.id} className="flex items-center justify-between px-6 py-4 hover:bg-foreground/[0.02] transition-colors">
+                  <div className="flex items-center gap-4">
+                    <span className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/40 w-6">
+                      №{String(i + 1).padStart(2, "0")}
+                    </span>
+                    <div>
+                      <h4 className="font-medium text-foreground">{user.name}</h4>
+                      <p className="text-sm text-foreground/55">{user.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    {user.isSuperAdmin && (
+                      <Badge className="font-mono-accent text-[10px] uppercase tracking-[0.2em]">
+                        Super
+                      </Badge>
+                    )}
+                    {user.isAdmin && !user.isSuperAdmin && (
+                      <Badge variant="secondary" className="font-mono-accent text-[10px] uppercase tracking-[0.2em]">
+                        Admin
+                      </Badge>
+                    )}
+                    {!user.isAdmin && !user.isSuperAdmin && (
+                      <span className="font-mono-accent text-[10px] uppercase tracking-[0.2em] text-foreground/40">
+                        Member
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {users.length === 0 && (
+                <div className="px-6 py-12 text-center text-foreground/50 text-sm">
+                  No members yet.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Editorial quick-links column */}
+          <div className="space-y-4">
+            <div className="border border-foreground/10 rounded-2xl p-6 bg-muted/30">
+              <span className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/50">
+                Chapter 04 · Shortcuts
+              </span>
+              <h3 className="font-display text-2xl font-light mt-1 mb-4">
+                Jump <span className="italic">in</span>.
+              </h3>
+              <div className="space-y-2">
+                {[
+                  { label: "Templates", to: "/admin/templates", icon: FileText },
+                  { label: "Freelancers", to: "/admin/freelancers", icon: Users },
+                  { label: "Activity log", to: "/admin/activity", icon: BarChart3 },
+                ].map((item) => (
+                  <button
+                    key={item.to}
+                    onClick={() => navigate(item.to)}
+                    className="w-full flex items-center justify-between px-4 py-3 rounded-full border border-foreground/10 bg-background hover:border-foreground/40 transition-all group"
+                  >
+                    <span className="flex items-center gap-3 text-sm">
+                      <item.icon className="w-4 h-4 text-foreground/60 group-hover:text-foreground" />
+                      {item.label}
+                    </span>
+                    <span className="font-mono-accent text-[10px] uppercase tracking-[0.2em] text-foreground/40 group-hover:text-foreground">
+                      Open →
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-l-2 border-primary pl-5 py-3">
+              <div className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/50 mb-2">
+                Note from the desk
+              </div>
+              <p className="font-display italic text-lg leading-snug">
+                "Run the studio quietly. Let the work speak."
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
 
       {/* Add User Dialog */}
       <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add New User</DialogTitle>
+            <DialogTitle className="font-display text-2xl font-light">
+              Add a <span className="italic">new</span> member
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label>Email</Label>
+            <div className="space-y-2">
+              <Label className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/60">
+                Email
+              </Label>
               <Input
                 type="email"
                 value={newUserEmail}
@@ -175,19 +270,23 @@ function AdminDashboard() {
                 placeholder="user@example.com"
               />
             </div>
-            <div>
-              <Label>Name</Label>
+            <div className="space-y-2">
+              <Label className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/60">
+                Name
+              </Label>
               <Input
                 value={newUserName}
                 onChange={(e) => setNewUserName(e.target.value)}
-                placeholder="John Doe"
+                placeholder="Jane Doe"
               />
             </div>
-            <div className="flex items-center justify-between">
-              <Label>Admin Access</Label>
+            <div className="flex items-center justify-between py-2">
+              <Label className="font-mono-accent text-[10px] uppercase tracking-[0.25em] text-foreground/60">
+                Admin access
+              </Label>
               <Switch checked={newUserIsAdmin} onCheckedChange={setNewUserIsAdmin} />
             </div>
-            <Button onClick={handleAddUser} className="w-full">Add User</Button>
+            <Button onClick={handleAddUser} className="w-full">Add member</Button>
           </div>
         </DialogContent>
       </Dialog>
